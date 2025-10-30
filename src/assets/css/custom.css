@@ -9,3 +9,27 @@ body {
 
 a {
 }
+
+.table-clickable tr td{
+    cursor: pointer;
+}
+
+.d-flex{
+    display: flex;
+}
+
+.flex-grow-1{
+    flex-grow: 1;
+}
+
+.align-self-start{
+    align-self: start;
+}
+
+.ml-auto{
+    margin-left: auto;
+}
+
+.mr-auto{
+    margin-right: auto;
+}
