@@ -6,8 +6,9 @@ import Workers from '@/views/workers/Workers.vue'
 import Students from '@/views/students/Students.vue'
 import PlanificationCards from '@/views/planif/PlanificationCards.vue';
 import PlanificationList from '@/views/planif/PlanificationList.vue';
-
 import { isAuthenticated } from '@/services/authenticationService'
+import AssistanceCards from '@/views/assistance/AssistanceCards.vue'
+import AssistanceList from '@/views/assistance/AssistanceList.vue'
 
 const routes = [
   {
@@ -31,7 +32,13 @@ const routes = [
       {
         path: 'students', // esto crea /students dentro de Home
         component: Students
-      }
+      },
+            { path: '/assistance', 
+        component: AssistanceCards 
+      },
+      { path: '/assistance/list', 
+        component: AssistanceList 
+      },
     ],
     beforeEnter: async (to, from, next) => {
       const valid = await isAuthenticated()
