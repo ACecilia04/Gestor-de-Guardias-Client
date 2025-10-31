@@ -30,6 +30,12 @@
         <span class="title">Planificaciones</span>
       </router-link>
     </li>
+    <li>
+      <router-link to="/assistance">
+        <i class="fa fa-calendar"></i>
+        <span class="title">Asistencia</span>
+      </router-link>
+    </li>
 
   </ul>
 </template>
