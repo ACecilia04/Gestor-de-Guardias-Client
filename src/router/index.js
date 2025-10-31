@@ -3,6 +3,7 @@ import Home from '@/views/home/Home.vue'
 import Login from '@/views/login/Login.vue'
 import Roles from '@/views/roles/Roles.vue'
 import Workers from '@/views/workers/Workers.vue'
+import Students from '@/views/students/Students.vue'
 import { isAuthenticated } from '@/services/authenticationService'
 
 const routes = [
@@ -15,10 +16,13 @@ const routes = [
         component: Roles
       },
       {
-        path: 'workers', // esto crea /roles dentro de Home
+        path: 'workers', // esto crea /workers dentro de Home
         component: Workers
+      },
+      {
+        path: 'students', // esto crea /students dentro de Home
+        component: Students
       }
-
     ],
     beforeEnter: async (to, from, next) => {
       const valid = await isAuthenticated()

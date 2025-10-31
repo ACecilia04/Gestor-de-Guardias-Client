@@ -3,5 +3,5 @@ import PersonTable from '@/components/PersonTable.vue'
 </script>
 
 <template>
-  <PersonTable tipo="Trabajador" />
+  <PersonTable tipo="Estudiante" />
 </template>

@@ -18,6 +18,12 @@
         <span class="title">Trabajadores</span>
       </router-link>
     </li>
+    <li>
+      <router-link to="/students">
+        <i class="fa-students"></i>
+        <span class="title">Estudiantes</span>
+      </router-link>
+    </li>
   </ul>
 </template>
 
