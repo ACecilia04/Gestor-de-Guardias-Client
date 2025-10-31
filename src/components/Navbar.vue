@@ -24,6 +24,13 @@
         <span class="title">Estudiantes</span>
       </router-link>
     </li>
+    <li>
+      <router-link to="/planif">
+        <i class="fa fa-calendar"></i>
+        <span class="title">Planificaciones</span>
+      </router-link>
+    </li>
+
   </ul>
 </template>
 
