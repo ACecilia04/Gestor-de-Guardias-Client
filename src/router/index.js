@@ -3,7 +3,13 @@ import Home from '@/views/home/Home.vue'
 import Login from '@/views/login/Login.vue'
 import Roles from '@/views/roles/Roles.vue'
 import Workers from '@/views/workers/Workers.vue'
+<<<<<<< HEAD
 import Students from '@/views/students/Students.vue'
+=======
+import PlanificationCards from '@/views/planif/PlanificationCards.vue';
+import PlanificationList from '@/views/planif/PlanificationList.vue';
+
+>>>>>>> a02d992 (feat: planification template added)
 import { isAuthenticated } from '@/services/authenticationService'
 
 const routes = [
@@ -18,6 +24,12 @@ const routes = [
       {
         path: 'workers', // esto crea /workers dentro de Home
         component: Workers
+      },
+      { path: '/planif', 
+        component: PlanificationCards 
+      },
+      { path: '/planif/:id', 
+        component: PlanificationList 
       },
       {
         path: 'students', // esto crea /students dentro de Home
@@ -46,3 +58,5 @@ const router = createRouter({
 })
 
 export default router
+
+
