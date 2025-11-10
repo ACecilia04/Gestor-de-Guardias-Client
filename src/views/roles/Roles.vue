@@ -1,5 +1,5 @@
 <template>
-  <!-- Responsive Table -->
+  <!-- Responsive Roles Table -->
   <div class="row">
     <div class="col-md-12">
     

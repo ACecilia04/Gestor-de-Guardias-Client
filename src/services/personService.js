@@ -50,6 +50,3 @@ export const deletePersonaByCi = (ci) =>
 
 export const deletePersonaById = (id) =>
   personaApi.delete('/deleteById', { params: { id } })
-
-export const getTablaByTipo = (tipo) =>
-  personaApi.get('/getTablaByTipo', { params: { tipo } })
