@@ -42,7 +42,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, defineProps, defineEmits } from 'vue'
+import { ref, reactive } from 'vue'
 import useVuelidate from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
 import { insertPersona, updatePersona, deletePersonaById } from '@/services/personService'

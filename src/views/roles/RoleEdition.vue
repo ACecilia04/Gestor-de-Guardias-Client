@@ -26,7 +26,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, defineEmits } from 'vue'
+import { ref, reactive } from 'vue'
 import useVuelidate from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
 import { insertRol, updateRol, deleteRol } from '@/services/rolService'

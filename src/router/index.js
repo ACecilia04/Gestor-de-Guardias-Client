@@ -4,6 +4,7 @@ import Login from '@/views/login/Login.vue'
 import Roles from '@/views/roles/Roles.vue'
 import Workers from '@/views/workers/Workers.vue'
 import Students from '@/views/students/Students.vue'
+import Users from '@/views/users/Users.vue'
 import PlanificationCards from '@/views/planif/PlanificationCards.vue';
 import PlanificationList from '@/views/planif/PlanificationList.vue';
 import { isAuthenticated } from '@/services/authenticationService'
@@ -38,6 +39,10 @@ const routes = [
       },
       { path: '/assistance/list', 
         component: AssistanceList 
+      },
+      {
+        path: 'users', // esto crea /users dentro de Home
+        component: Users
       },
     ],
     beforeEnter: async (to, from, next) => {
