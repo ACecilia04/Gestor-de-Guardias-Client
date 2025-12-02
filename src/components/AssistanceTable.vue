@@ -2,6 +2,12 @@
   <div class="panel panel-default shadow-sm rounded">
     <div class="panel-heading bg-primary text-white p-3 rounded-top">
       <h3 class="panel-title mb-0 fw-semibold">Asistencias</h3>
+      <div class="panel-options">
+        <!-- Botón Exportar PDF -->
+        <a href="#" @click.prevent="exportToPdf" title="Exportar PDF" class="text-white">
+          <i class="fa fa-file-pdf-o"></i>
+        </a>
+      </div>
     </div>
 
     <div class="panel-body p-3 bg-light rounded-bottom">
@@ -54,11 +60,20 @@
 </template>
 
 <script setup>
+// import { getAsistenciasPdf } from '@/services/exportService' // TODO: integrar servicio API
 import { ref } from 'vue'
 
 const guardias = ref([
   { id: 1, dia: '2 Miércoles', horario: '20:00 - 08:00', carnet: '01100144547', apellidos: 'Blakman Briones', nombre: 'Teodoro Ivan', asistencia: null },
-  { id: 2, dia: '3 Jueves', horario: '20:00 - 08:00', carnet: '05111090166', apellidos: 'De Sousa Diaz', nombre: 'Luis Gabriel', asistencia: null },
-  { id: 3, dia: '4 Viernes', horario: '08:00 - 20:00', carnet: '04022578253', apellidos: 'Aguilera Garcia', nombre: 'Amanda Cecilia', asistencia: null },
+  { id: 2, dia: '3 Jueves',    horario: '20:00 - 08:00', carnet: '05111090166', apellidos: 'De Sousa Diaz', nombre: 'Luis Gabriel', asistencia: null },
+  { id: 3, dia: '4 Viernes',   horario: '08:00 - 20:00', carnet: '04022578253', apellidos: 'Aguilera Garcia', nombre: 'Amanda Cecilia', asistencia: null },
 ])
+
+function exportToPdf() {
+  // TODO: conectar con API o fallback de frontend
+  // Ejemplo futuro:
+  // const blob = await getAsistenciasPdf({ /* filtros */ })
+  // downloadBlob(blob, 'asistencias.pdf')
+  console.log('[Export] Asistencias -> PDF (pendiente de servicio)')
+}
 </script>

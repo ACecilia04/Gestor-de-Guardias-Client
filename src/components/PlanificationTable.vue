@@ -2,6 +2,12 @@
   <div class="panel panel-default">
     <div class="panel-heading">
       <h3 class="panel-title">Planificación</h3>
+      <div class="panel-options">
+        <!-- Botón Exportar PDF -->
+        <a href="#" @click.prevent="exportToPdf" title="Exportar PDF">
+          <i class="fa fa-file-pdf-o"></i>
+        </a>
+      </div>
     </div>
 
     <div class="panel-body">
@@ -30,8 +36,8 @@
 </template>
 
 <script setup>
-// import { getPlanificacionById } from '@/services/planificacionService'
-import { ref, onMounted } from 'vue'
+// import { getPlanificacionPdf } from '@/services/exportService' // TODO: integrar servicio API
+import { ref } from 'vue'
 
 const guardias = ref([
   {
@@ -52,27 +58,30 @@ const guardias = ref([
   },
 ])
 
+function exportToPdf() {
+  // TODO: conectar con API o fallback de frontend
+  // Ejemplo futuro:
+  // const blob = await getPlanificacionPdf({ /* filtros */ })
+  // downloadBlob(blob, 'planificacion.pdf')
+  console.log('[Export] Planificación -> PDF (pendiente de servicio)')
+}
 </script>
 
 <style scoped>
 .panel-heading {
   color: #fff;
 }
-
 .table th {
   background-color: #fff !important;
   color: #000 !important;
   font-weight: 600;
 }
-
 .table-striped > tbody > tr:nth-of-type(odd) {
   background-color: #f8f9fc;
 }
-
 .table-hover tbody tr:hover {
   background-color: #e6f0ff;
 }
-
 .panel {
   transition: all 0.3s ease;
 }
