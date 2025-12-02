@@ -8,7 +8,7 @@
           <h3 class="panel-title">Roles</h3>
           <div class="panel-options">
             <a href="#" @click="openEditionForm('')">
-              <i class="fa fa-file-o"></i>
+              <i class="fa fa-plus"></i>
             </a>
           </div>
         </div>  

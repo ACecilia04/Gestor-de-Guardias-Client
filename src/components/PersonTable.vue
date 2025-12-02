@@ -4,7 +4,7 @@
       <h3 class="panel-title">{{ title }}</h3>
       <div class="panel-options">
         <a href="#" @click.prevent="openEditionForm(null)" title="Añadir">
-          <i class="fa fa-file-o"></i>
+          <i class="fa fa-plus"></i>
         </a>
         <!-- Botón Exportar PDF -->
         <a href="#" @click.prevent="exportToPdf" title="Exportar PDF">

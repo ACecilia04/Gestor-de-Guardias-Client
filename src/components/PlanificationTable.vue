@@ -10,53 +10,69 @@
       </div>
     </div>
 
-    <div class="panel-body">
-      <table class="table table-bordered table-striped text-center align-middle">
-        <thead>
-          <tr class="bg-primary text-white">
-            <th>Día</th>
-            <th>Horario</th>
-            <th>Carnet</th>
-            <th>Apellidos</th>
-            <th>Nombre</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="g in guardias" :key="g.id">
-            <td>{{ g.dia }}</td>
-            <td>{{ g.horario }}</td>
-            <td>{{ g.carnet }}</td>
-            <td>{{ g.apellidos }}</td>
-            <td>{{ g.nombre }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+<div class="panel-body">
+  <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+    <table class="table table-bordered table-striped text-center align-middle">
+      <thead>
+        <tr class="bg-primary text-white">
+          <th>Día</th>
+          <th>Horario</th>
+          <th>Carnet</th>
+          <th>Apellidos</th>
+          <th>Nombre</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="g in guardias" :key="g.id">
+          <td>{{ g.dia }}</td>
+          <td>{{ g.horario }}</td>
+          <td>{{ g.carnet }}</td>
+          <td>{{ g.apellidos }}</td>
+          <td>{{ g.nombre }}</td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+  <div v-if="error" class="text-danger mt-2">{{ error }}</div>
+</div>
+    <div v-if="loading">Cargando planificación...</div>
+    <div v-if="error">{{ error }}</div>
   </div>
 </template>
 
 <script setup>
-// import { getPlanificacionPdf } from '@/services/exportService' // TODO: integrar servicio API
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { getTurnosAPartirDe } from '@/services/planificationService'
 
-const guardias = ref([
-  {
-    id: 1,
-    dia: '23 Lunes',
-    horario: '20:00 - 08:00',
-    carnet: '01011186884',
-    apellidos: 'Banegas Andrade',
-    nombre: 'Marlon Roberto',
-  },
-  {
-    id: 2,
-    dia: '24 Martes',
-    horario: '20:00 - 08:00',
-    carnet: '01100144547',
-    apellidos: 'Blakman Briones',
-    nombre: 'Teodoro Ivan',
-  },
-])
+const guardias = ref([])
+const route = useRoute()
+const fecha = route.params.id
+const loading = ref(true)
+onMounted(async () => {
+  try {
+    const response = await getTurnosAPartirDe(fecha)
+    const turnos = response.data
+
+    guardias.value = turnos.map((t, index) => ({
+      id: t.id || index,
+      dia: new Date(t.fecha).toLocaleDateString('es-ES', {
+        day: 'numeric',
+        weekday: 'long'
+      }),
+      horario: `${t.horario?.inicio?.slice(0, 5)} - ${t.horario?.fin?.slice(0, 5)}`,
+      carnet: t.personaAsignada?.carnet || '',
+      apellidos: t.personaAsignada?.apellido || '',
+      nombre: t.personaAsignada?.nombre || ''
+    }))
+  } catch (error) {
+    console.error('Error cargando planificación:', error)
+  } finally {
+    loading.value = false
+  }
+})
+
 
 function exportToPdf() {
   // TODO: conectar con API o fallback de frontend
@@ -71,20 +87,25 @@ function exportToPdf() {
 .panel-heading {
   color: #fff;
 }
+
 .table th {
   background-color: #fff !important;
   color: #000 !important;
   font-weight: 600;
 }
-.table-striped > tbody > tr:nth-of-type(odd) {
+
+.table-striped>tbody>tr:nth-of-type(odd) {
   background-color: #f8f9fc;
 }
+
 .table-hover tbody tr:hover {
   background-color: #e6f0ff;
 }
+
 .panel {
   transition: all 0.3s ease;
 }
+
 .panel:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 14px rgba(0, 90, 170, 0.25);

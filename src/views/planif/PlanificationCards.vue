@@ -29,23 +29,35 @@
   </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      planificaciones: [
-        { id: 1, nombre: 'Junio 2025', fechaInicio: '23/06/2025' },
-        { id: 2, nombre: 'Julio 2025', fechaInicio: '01/07/2025' },
-        { id: 3, nombre: 'Agosto 2025', fechaInicio: '01/08/2025' },
-      ],
-    }
-  },
-  methods: {
-    verDetalle(id) {
-      this.$router.push(`/planif/${id}`)
-    },
-  },
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { getPrimerasFechasPorMes } from '@/services/planificationService'
+
+const planificaciones = ref([])
+const router = useRouter()
+
+const verDetalle = (id) => {
+  router.push(`/planif/${id}`)
 }
+
+onMounted(async () => {
+  try {
+    const response = await getPrimerasFechasPorMes()
+    const fechas = response.data
+
+    planificaciones.value = fechas.map(fechaStr => {
+      const fecha = new Date(fechaStr)
+      return {
+        id: fechaStr,
+        nombre: fecha.toLocaleString('default', { month: 'long', year: 'numeric' }),
+        fechaInicio: fechaStr
+      }
+    })
+  } catch (error) {
+    console.error('Error loading planificaciones:', error)
+  }
+})
 </script>
 
 <style scoped>
