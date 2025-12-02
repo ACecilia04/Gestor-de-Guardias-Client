@@ -5,8 +5,9 @@ import Roles from '@/views/roles/Roles.vue'
 import Workers from '@/views/workers/Workers.vue'
 import Students from '@/views/students/Students.vue'
 import Users from '@/views/users/Users.vue'
-import PlanificationCards from '@/views/planif/PlanificationCards.vue';
-import PlanificationList from '@/views/planif/PlanificationList.vue';
+import PlanificationCards from '@/views/planif/PlanificationCards.vue'
+import PlanificationList from '@/views/planif/PlanificationList.vue'
+import Configuration from '@/views/configuration/Configuration.vue'
 import { isAuthenticated } from '@/services/authenticationService'
 import AssistanceCards from '@/views/assistance/AssistanceCards.vue'
 import AssistanceList from '@/views/assistance/AssistanceList.vue'
@@ -34,7 +35,7 @@ const routes = [
         path: 'students', // esto crea /students dentro de Home
         component: Students
       },
-            { path: '/assistance', 
+      { path: '/assistance', 
         component: AssistanceCards 
       },
       { path: '/assistance/list', 
@@ -44,6 +45,10 @@ const routes = [
         path: 'users', // esto crea /users dentro de Home
         component: Users
       },
+      {
+        path: 'configuration', // esto crea /configuration dentro de Home
+        component: Configuration
+      }
     ],
     beforeEnter: async (to, from, next) => {
       const valid = await isAuthenticated()
