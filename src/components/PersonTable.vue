@@ -3,11 +3,14 @@
     <div class="panel-heading">
       <h3 class="panel-title">{{ title }}</h3>
       <div class="panel-options">
-        <a href="#" @click.prevent="openEditionForm(null)">
+        <a href="#" @click.prevent="openEditionForm(null)" title="Añadir">
           <i class="fa fa-file-o"></i>
         </a>
+        <!-- Botón Exportar PDF -->
+        <a href="#" @click.prevent="exportToPdf" title="Exportar PDF">
+          <i class="fa fa-file-pdf-o"></i>
+        </a>
       </div>
-
     </div>
     <div class="panel-body">
       <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
@@ -56,6 +59,7 @@
 </template>
 
 <script setup>
+// import { getPersonasPdf } from '@/services/exportService' // TODO: integrar servicio API
 import { ref, onMounted, watch, computed } from 'vue'
 import { getPersonasByTipo } from '@/services/personService'
 import PersonaEdition from './PersonEdition.vue'
@@ -102,5 +106,14 @@ const closeEditionForm = async () => {
   showModal.value = false
   selectedPersona.value = null
   await loadData()
+}
+
+// Botón Exportar PDF (placeholder)
+function exportToPdf() {
+  // TODO: conectar con API o fallback de frontend
+  // Ejemplo futuro:
+  // const blob = await getPersonasPdf({ tipo: props.tipo })
+  // downloadBlob(blob, `personas-${props.tipo}.pdf`)
+  console.log('[Export] Personas -> PDF (pendiente de servicio)', props.tipo)
 }
 </script>
