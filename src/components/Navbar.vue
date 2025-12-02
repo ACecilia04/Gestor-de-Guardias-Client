@@ -42,6 +42,12 @@
       <span class="title">Usuarios</span>
     </router-link>
   </li>
+   <li>
+    <router-link to="/configuration">
+      <i class="fa fa-cog"></i>
+      <span class="title">Configuración</span>
+    </router-link>
+   </li>
 </ul>
 </template>
 
