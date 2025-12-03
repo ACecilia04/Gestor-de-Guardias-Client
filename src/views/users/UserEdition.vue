@@ -9,37 +9,24 @@
       <div class="col-md-6">
         <div class="form-group">
           <label for="nombreUsuario" class="control-label">Nombre de Usuario</label>
-          <input
-            type="text"
-            class="form-control"
-            id="nombreUsuario"
-            v-model="form.nombreUsuario"
-            placeholder="Nombre de usuario"
-          />
-          <validation-message
-            for="nombreUsuario"
-            message="Requerido"
-            :visible="v$.nombreUsuario.$error"
-          />
+          <input type="text" class="form-control" id="nombreUsuario" v-model="form.nombreUsuario"
+            placeholder="Nombre de usuario" />
+          <ValidationMessage for="nombreUsuario" message="Requerido" :visible="v$.nombreUsuario.$error" />
         </div>
       </div>
 
       <div class="col-md-6">
         <div class="form-group">
           <label for="rol" class="control-label">Rol</label>
-          <input
-            type="text"
-            class="form-control"
-            id="rol"
-            v-model="form.rol"
-            placeholder="Rol"
-          />
-          <validation-message
-            for="rol"
-            message="Requerido"
-            :visible="v$.rol.$error"
-          />
+          <select id="rol" class="form-control" v-model="form.rol">
+            <option disabled value="">Seleccione un rol</option>
+            <option v-for="r in roles" :key="r.nombre" :value="r.nombre">
+              {{ r.nombre }}
+            </option>
+          </select>
+          <ValidationMessage for="rol" message="Requerido" :visible="v$.rol.$error" />
         </div>
+
       </div>
     </div>
   </div>
@@ -54,20 +41,26 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, onMounted } from 'vue'
 import useVuelidate from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
 import { insertUsuario, updateUsuario, deleteUsuario } from '@/services/userService'
+import { getAllRoles } from '@/services/rolService'
+import ValidationMessage from '@/components/ValidationMessage.vue'
 
 const props = defineProps({
   usuario: { type: Object, default: null }
 })
+
 const emit = defineEmits(['onClose'])
 
+const roles = ref([])
+const error = ref(null)
+
 const form = reactive({
-  id: props.usuario?.id || null,
-  nombreUsuario: props.usuario?.nombreUsuario || '',
-  rol: props.usuario?.rol?.nombre || '' // adapt if rol is a string
+  id: null,
+  nombreUsuario: '',
+  rol: ''
 })
 
 const rules = {
@@ -76,7 +69,26 @@ const rules = {
 }
 
 const v$ = useVuelidate(rules, form)
-const error = ref(null)
+
+onMounted(async () => {
+  try {
+    const response = await getAllRoles()
+    roles.value = response.data
+  } catch (err) {
+    console.error('Error cargando roles:', err)
+  }
+})
+
+// Watch for prop changes and populate form reactively
+watch(
+  () => props.usuario,
+  (usuario) => {
+    form.id = usuario?.id || null
+    form.nombreUsuario = usuario?.nombre || ''
+    form.rol = usuario?.rol?.nombre || ''
+  },
+  { immediate: true }
+)
 
 const closeWindow = () => {
   emit('onClose')
@@ -93,7 +105,7 @@ const saveRecord = async () => {
     const payload = {
       id: form.id,
       nombreUsuario: form.nombreUsuario,
-      rol: { nombre: form.rol } // adapt if backend expects string
+      rol: { nombre: form.rol }
     }
 
     if (!form.id) {

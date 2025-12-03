@@ -1,33 +1,27 @@
 import axios from 'axios'
 
-const baseUrl = '/usuario'
+const usuarioApi = axios.create({
+  baseURL: 'http://localhost:9091/guardia-api/usuario',
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true
+})
 
-export async function getAllUsuarios() {
-  return axios.get(`${baseUrl}/getAll`)
-}
+export const getAllUsuarios = () => usuarioApi.get('/getAll')
 
-export async function getUsuarioById(id) {
-  return axios.get(`${baseUrl}/get`, {
-    params: { id }
+export const getUsuarioById = (id) =>
+  usuarioApi.get('/get', { params: { id } })
+
+export const getUsuarioByNombre = (nombre) =>
+  usuarioApi.get('/getByNombre', { params: { nombre } })
+
+export const insertUsuario = (usuario) =>
+  usuarioApi.post('/insert', usuario)
+
+export const updateUsuario = (usuario) =>
+  usuarioApi.post('/update', usuario)
+
+export const deleteUsuario = (id) =>
+  usuarioApi.delete('/delete', {
+    data: id,
+    headers: { 'Content-Type': 'text/plain' }
   })
-}
-
-export async function getUsuarioByNombre(nombre) {
-  return axios.get(`${baseUrl}/getByNombre`, {
-    params: { nombre }
-  })
-}
-
-export async function insertUsuario(usuario) {
-  return axios.post(`${baseUrl}/insert`, usuario)
-}
-
-export async function updateUsuario(usuario) {
-  return axios.post(`${baseUrl}/update`, usuario)
-}
-
-export async function deleteUsuario(id) {
-  return axios.delete(`${baseUrl}/delete`, {
-    data: ida
-  })
-}

@@ -29,21 +29,13 @@
                   <th>Rol</th>
                 </tr>
               </thead>
-
-              <tfoot>
-                <tr>
-                  <th>Nombre de Usuario</th>
-                  <th>Rol</th>
-                </tr>
-              </tfoot>
-
               <tbody>
                 <tr
                   v-for="usuario in usuarios"
                   :key="usuario.id"
                   @click="openEditionForm(usuario)"
                 >
-                  <td>{{ usuario.nombreUsuario }}</td>
+                  <td>{{ usuario.nombre }}</td>
                   <td>{{ usuario.rol.nombre }}</td>
                 </tr>
               </tbody>
@@ -93,11 +85,16 @@ const error = ref(null)
 onMounted(async () => {
   loading.value = true
   try {
-    const response = await getAllUsuarios()
-    usuarios.value = response.data
-  } catch (err) {
-    error.value = 'No se pudieron cargar los usuarios'
-    console.error(err)
+  const response = await getAllUsuarios()
+  console.log('Usuarios:', response.data)
+
+  if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE')) {
+    throw new Error('API returned HTML instead of JSON')
+  }
+  usuarios.value = response.data
+} catch (err) {
+  error.value = 'No se pudieron cargar los usuarios'
+  console.error('Error al cargar usuarios:', err)
   } finally {
     loading.value = false
   }

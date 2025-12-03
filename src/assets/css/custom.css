@@ -33,3 +33,28 @@ a {
 .mr-auto{
     margin-right: auto;
 }
+
+.sidebar-menu {
+  width: 300px ;
+  background: #23272a !important;;
+
+}
+/*
+.main-content {
+  margin-left: 300px !important;
+}
+*/
+.main-menu li > a {
+  font-size: 1.5rem !important;     
+ /* font-weight: 600 !important;    */
+  display: flex;
+  align-items: center;
+  gap: 10px;                       
+}
+/*
+.main-menu .title {
+  font-size: inherit;
+  font-weight: inherit;
+  white-space: nowrap;
+} 
+*/

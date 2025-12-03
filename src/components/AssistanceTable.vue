@@ -11,7 +11,7 @@
 
     <div class="panel-body p-3 bg-light rounded-bottom">
       <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-        <table class="table table-bordered table-striped text-center align-middle">
+        <table class="table table-bordered table-striped">
           <thead>
             <tr class="bg-white text-dark">
               <th>Día</th>
