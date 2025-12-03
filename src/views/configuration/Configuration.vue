@@ -57,7 +57,7 @@
 import { ref, onMounted } from 'vue'
 import ConfigurationTable from '@/components/ConfigurationTable.vue'
 import ConfigurationEdition from '@/components/ConfigurationEdition.vue'
-import { getAllConfiguraciones } from '@/services/configurationService'
+import { saveConfiguracion, getAllConfiguraciones } from '@/services/configurationService'
 
 const columns = [
   { key: 'day', label: 'Día' },
@@ -85,32 +85,28 @@ function closeModal() {
   showModal.value = false
 }
 
-function handleSubmit(payload) {
-  const { day, persons, sex, break: isBreak, schedules, personType } = payload
-
-  if (selectedItem.value) {
-    const idx = rows.value.findIndex(r =>
-      r.day === selectedItem.value.day &&
-      r.time === selectedItem.value.time &&
-      r.persons === selectedItem.value.persons &&
-      r.sex === selectedItem.value.sex &&
-      r.break === selectedItem.value.break &&
-      r.personType === selectedItem.value.personType
-    )
-    if (idx !== -1) rows.value.splice(idx, 1)
+async function handleSubmit(payload) {
+  loading.value = true
+  try {
+    // Aquí guardas la configuración
+    await saveConfiguracion(payload)
+    // Actualizas la lista para mostrar lo nuevo
+    const response = await getAllConfiguraciones()
+    rows.value = response.data.map(c => ({
+      day: mapDiaSemana(c.diaSemana),
+      time: `${c.horario.inicio} - ${c.horario.fin}`,
+      persons: c.cantPersonas,
+      sex: mapSexo(c.sexo),
+      personType: mapTipoPersona(c.tipoPersona?.nombre),
+      break: c.receso ? 'Sí' : 'No'
+    }))
+  } catch (err) {
+    error.value = 'No se pudo guardar la configuración'
+    console.error(err)
+  } finally {
+    loading.value = false
+    closeModal()
   }
-
-  for (const s of schedules) {
-    rows.value.push({
-      day,
-      time: `${s.start} - ${s.end}`,
-      persons: Number(persons),
-      sex,
-      break: isBreak ? 'Sí' : 'No',
-      personType
-    })
-  }
-  closeModal()
 }
 
 // Nuevo mapeo para tipo y sexo legible

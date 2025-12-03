@@ -11,7 +11,7 @@ export const getAllConfiguraciones = () => {
 }
 
 export const saveConfiguracion = (payload) => {
-  return configuracionApi.post('/save', payload)
+  return configuracionApi.post('/insert', payload)
 }
 
 export const deleteConfiguracion = (id) => {

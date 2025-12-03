@@ -43,9 +43,9 @@
         </select>
       </div>
 
-      <!-- Lista de horarios registrados + botón para abrir el segundo modal -->
+      <!-- Lista de horarios registrados (realmente: todos los horarios disponibles) -->
       <div class="form-group">
-        <label class="control-label">Horarios registrados</label>
+        <label class="control-label">Horario</label>
         <div class="d-flex" style="gap: 8px; flex-wrap: wrap; align-items: center;">
           <select class="form-control" v-model="selectedIndex" style="min-width: 220px;">
             <option v-for="(s, idx) in allHorarios" :key="idx" :value="idx">
@@ -53,12 +53,6 @@
             </option>
             <option v-if="allHorarios.length === 0" disabled value="-1">Sin horarios</option>
           </select>
-
-
-          <!-- Solo este botón, sin inputs inline ni eliminar -->
-          <button type="button" class="btn btn-info" @click="openAddSchedule">
-            Añadir horario
-          </button>
         </div>
       </div>
 
@@ -69,29 +63,36 @@
     </div>
 
     <div class="modal-footer d-flex">
-      <button type="button" class="btn btn-white" @click="$emit('onClose')">Cancel...</button>
+      <button type="button" class="btn btn-white" @click="$emit('onClose')">Cancelar</button>
       <button type="button" class="btn btn-info" @click="submit">Aceptar</button>
-    </div>
-  </div>
-
-  <!-- Modal secundario: AddSchedule -->
-  <div class="modal fade in" style="display:block" v-if="showAddSchedule">
-    <div class="modal-backdrop fade in" style="height: 100vh;"></div>
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <AddSchedule :initial="{ start: '09:00', end: '14:00' }" @onClose="closeAddSchedule"
-          @onSubmit="receiveSchedule" />
-      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref, watch, onMounted } from 'vue'
-import AddSchedule from './AddSchedule.vue'
+import { reactive, ref, onMounted } from 'vue'
 import { getAllHorarios } from '@/services/scheduleService'
 
+function getDiaSemanaInt(str) {
+  const map = {
+    'Domingo': 0,
+    'Lunes': 1,
+    'Martes': 2,
+    'Miércoles': 3,
+    'Jueves': 4,
+    'Viernes': 5,
+    'Sábado': 6
+  }
+  return map[str] ?? 1
+}
+function mapSexoToBackend(sexo) {
+  if (sexo === 'Masculino') return 'M'
+  if (sexo === 'Femenino') return 'F'
+  return null
+}
+
 const allHorarios = ref([])
+const selectedIndex = ref(-1)
 
 onMounted(async () => {
   try {
@@ -100,6 +101,10 @@ onMounted(async () => {
       start: h.inicio,
       end: h.fin
     }))
+    // Selecciona por defecto el primero si hay horarios
+    if (allHorarios.value.length > 0) {
+      selectedIndex.value = 0
+    }
   } catch (err) {
     console.error('Error cargando horarios desde la API:', err)
   }
@@ -115,42 +120,26 @@ const form = reactive({
   personType: 'Ambos',
   sex: props.initial?.sex ?? 'Ambos',
   day: props.initial?.day ?? 'Lunes',
-  break: props.initial?.break ?? false,
-  schedules: props.initial?.time
-    ? [{ start: props.initial.time.split(' - ')[0], end: props.initial.time.split(' - ')[1] }]
-    : []
+  break: props.initial?.break ?? false
 })
-
-// Índice seleccionado como ref real (ya no computed) para que el select funcione bien
-const selectedIndex = ref(form.schedules.length ? 0 : -1)
-watch(() => form.schedules.length, (len) => {
-  selectedIndex.value = len ? 0 : -1
-})
-
-// Segundo modal: estado y handlers
-const showAddSchedule = ref(false)
-function openAddSchedule() {
-  showAddSchedule.value = true
-}
-function closeAddSchedule() {
-  showAddSchedule.value = false
-}
-function receiveSchedule(s) {
-  // Sin validaciones por ahora
-  form.schedules.push({ start: s.start, end: s.end })
-  showAddSchedule.value = false
-}
 
 function submit() {
-  const selectedSchedule = allHorarios.value[selectedIndex.value]
-
+  const idx = selectedIndex.value
+  if (allHorarios.value.length === 0 || idx === -1) {
+    alert('Por favor, seleccione un horario antes de guardar la configuración.')
+    return
+  }
+  const horarioSeleccionado = allHorarios.value[idx]
   emit('onSubmit', {
-    persons: Number(form.persons),
-    personType: form.personType,
-    sex: form.sex,
-    day: form.day,
-    break: !!form.break,
-    schedules: selectedSchedule ? [selectedSchedule] : []
+    diaSemana: getDiaSemanaInt(form.day),
+    horario: { 
+      inicio: horarioSeleccionado.start, 
+      fin: horarioSeleccionado.end 
+    },
+    cantPersonas: Number(form.persons),
+    sexo: mapSexoToBackend(form.sex),
+    tipoPersona: form.personType === 'Ambos' ? null : { nombre: form.personType },
+    receso: !!form.break
   })
 }
 </script>
