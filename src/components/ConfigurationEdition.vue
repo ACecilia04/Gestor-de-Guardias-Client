@@ -48,11 +48,12 @@
         <label class="control-label">Horarios registrados</label>
         <div class="d-flex" style="gap: 8px; flex-wrap: wrap; align-items: center;">
           <select class="form-control" v-model="selectedIndex" style="min-width: 220px;">
-            <option v-for="(s, idx) in form.schedules" :key="idx" :value="idx">
+            <option v-for="(s, idx) in allHorarios" :key="idx" :value="idx">
               {{ s.start }} - {{ s.end }}
             </option>
-            <option v-if="form.schedules.length === 0" disabled value="-1">Sin horarios</option>
+            <option v-if="allHorarios.length === 0" disabled value="-1">Sin horarios</option>
           </select>
+
 
           <!-- Solo este botón, sin inputs inline ni eliminar -->
           <button type="button" class="btn btn-info" @click="openAddSchedule">
@@ -78,19 +79,31 @@
     <div class="modal-backdrop fade in" style="height: 100vh;"></div>
     <div class="modal-dialog">
       <div class="modal-content">
-        <AddSchedule
-          :initial="{ start: '09:00', end: '14:00' }"
-          @onClose="closeAddSchedule"
-          @onSubmit="receiveSchedule"
-        />
+        <AddSchedule :initial="{ start: '09:00', end: '14:00' }" @onClose="closeAddSchedule"
+          @onSubmit="receiveSchedule" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue'
+import { reactive, ref, watch, onMounted } from 'vue'
 import AddSchedule from './AddSchedule.vue'
+import { getAllHorarios } from '@/services/scheduleService'
+
+const allHorarios = ref([])
+
+onMounted(async () => {
+  try {
+    const response = await getAllHorarios()
+    allHorarios.value = response.data.map(h => ({
+      start: h.inicio,
+      end: h.fin
+    }))
+  } catch (err) {
+    console.error('Error cargando horarios desde la API:', err)
+  }
+})
 
 const props = defineProps({
   initial: { type: Object, default: null }
@@ -129,13 +142,15 @@ function receiveSchedule(s) {
 }
 
 function submit() {
+  const selectedSchedule = allHorarios.value[selectedIndex.value]
+
   emit('onSubmit', {
     persons: Number(form.persons),
     personType: form.personType,
     sex: form.sex,
     day: form.day,
     break: !!form.break,
-    schedules: form.schedules.map(s => ({ start: s.start, end: s.end }))
+    schedules: selectedSchedule ? [selectedSchedule] : []
   })
 }
 </script>

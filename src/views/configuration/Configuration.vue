@@ -8,7 +8,7 @@
           <h3 class="panel-title">Configuración</h3>
           <div class="panel-options">
             <a href="#" @click.prevent="openModal(null)" title="Añadir configuración">
-              <i class="fa fa-file-o"></i>
+              <i class="fa fa-plus"></i>
             </a>
           </div>
         </div>
@@ -54,11 +54,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import ConfigurationTable from '@/components/ConfigurationTable.vue'
 import ConfigurationEdition from '@/components/ConfigurationEdition.vue'
+import { getAllConfiguraciones } from '@/services/configurationService'
 
-// Columnas según la imagen
 const columns = [
   { key: 'day', label: 'Día' },
   { key: 'time', label: 'Horario' },
@@ -67,21 +67,10 @@ const columns = [
   { key: 'break', label: 'Receso' }
 ]
 
-// Datos de ejemplo para maquetar; se reemplazarán por API
-const rows = ref([
-  { day: 'Lunes', time: '09:00 - 14:00', persons: 1, sex: 'Ambos', break: 'Sí' },
-  { day: 'Lunes', time: '14:00 - 19:00', persons: 1, sex: 'Ambos', break: 'Sí' },
-  { day: 'Lunes', time: '20:00 - 08:00', persons: 1, sex: 'Masculino', break: 'No' },
-  { day: 'Martes', time: '09:00 - 14:00', persons: 1, sex: 'Ambos', break: 'Sí' },
-  { day: 'Martes', time: '14:00 - 19:00', persons: 1, sex: 'Ambos', break: 'Sí' },
-  { day: 'Martes', time: '20:00 - 08:00', persons: 1, sex: 'Masculino', break: 'No' },
-  // ...continúa con Miércoles, Jueves, etc.
-])
-
+const rows = ref([])
 const loading = ref(false)
 const error = ref(null)
 
-// Modal logic (corregido: nombres coherentes con el template)
 const showModal = ref(false)
 const selectedItem = ref(null)
 
@@ -96,9 +85,9 @@ function closeModal() {
 }
 
 function handleSubmit(payload) {
-  // Añade filas por cada horario
   const { day, persons, sex, break: isBreak, schedules } = payload
-  // Si está editando un item, elimínalo primero
+
+  // Remove old item if editing
   if (selectedItem.value) {
     const idx = rows.value.findIndex(r =>
       r.day === selectedItem.value.day &&
@@ -109,7 +98,8 @@ function handleSubmit(payload) {
     )
     if (idx !== -1) rows.value.splice(idx, 1)
   }
-  // Agrega nuevas filas
+
+  // Add new rows
   for (const s of schedules) {
     rows.value.push({
       day,
@@ -119,6 +109,37 @@ function handleSubmit(payload) {
       break: isBreak ? 'Sí' : 'No'
     })
   }
+
   closeModal()
 }
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    const response = await getAllConfiguraciones()
+    rows.value = response.data.map(c => ({
+      day: mapDiaSemana(c.diaSemana),
+      time: `${c.horario.inicio} - ${c.horario.fin}`,
+      persons: c.cantPersonas,
+      sex: mapSexo(c.sexo, c.tipoPersona?.nombre),
+      break: 'Sí' // or map from another field if needed
+    }))
+  } catch (err) {
+    error.value = 'No se pudo cargar la configuración'
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
+})
+function mapDiaSemana(num) {
+  const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+  return dias[num % 7] || 'Desconocido'
+}
+
+function mapSexo(sexo, tipoPersonaNombre) {
+  if (sexo === 'M') return 'Masculino'
+  if (sexo === 'F') return 'Femenino'
+  return tipoPersonaNombre || 'Ambos'
+}
+
 </script>

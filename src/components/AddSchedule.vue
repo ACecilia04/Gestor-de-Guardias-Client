@@ -25,7 +25,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { insertHorario, getAllHorarios } from '@/services/scheduleService'
+
+const existingHorarios = ref([])
 
 const props = defineProps({
   initial: { type: Object, default: () => ({ start: '08:00', end: '20:00' }) }
@@ -35,8 +38,41 @@ const emit = defineEmits(['onClose', 'onSubmit'])
 const start = ref(props.initial.start ?? '08:00')
 const end = ref(props.initial.end ?? '20:00')
 
-function submit() {
-  // Sin validaciones por pedido
-  emit('onSubmit', { start: start.value, end: end.value })
+onMounted(async () => {
+  try {
+    const response = await getAllHorarios()
+    existingHorarios.value = response.data.map(h => ({
+      inicio: h.inicio,
+      fin: h.fin
+    }))
+  } catch (err) {
+    console.error('Error cargando horarios existentes:', err)
+  }
+})
+
+async function submit() {
+  const exists = existingHorarios.value.some(h =>
+    h.inicio === start.value && h.fin === end.value
+  )
+
+  if (exists) {
+    alert('Este horario ya está registrado.')
+    return
+  }
+
+  try {
+    const payload = {
+      inicio: start.value,
+      fin: end.value
+    }
+
+    await insertHorario(payload)
+
+    emit('onSubmit', payload)
+    emit('onClose')
+  } catch (err) {
+    console.error('Error al guardar el horario:', err)
+  }
 }
+
 </script>

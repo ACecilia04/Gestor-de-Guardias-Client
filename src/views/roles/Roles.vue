@@ -24,12 +24,6 @@
                 </tr>
               </thead>
 
-              <tfoot>
-                <tr>
-                  <th>Nombre</th>
-                </tr>
-              </tfoot>
-
               <tbody>
                 <tr v-for="rol in roles" :key="rol.nombre" @click="openEditionForm(rol.nombre)">
                   <td>{{ rol.nombre }}</td>
