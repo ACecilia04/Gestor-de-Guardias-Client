@@ -3,41 +3,40 @@
     <div class="panel-heading">
       <h3 class="panel-title">Planificación</h3>
       <div class="panel-options">
-        <!-- Botón Exportar PDF -->
         <a href="#" @click.prevent="exportToPdf" title="Exportar PDF">
           <i class="fa fa-file-pdf-o"></i>
         </a>
       </div>
     </div>
 
-<div class="panel-body">
-  <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-    <table class="table table-bordered table-striped text-center align-middle">
-      <thead>
-        <tr class="bg-primary text-white">
-          <th>Día</th>
-          <th>Horario</th>
-          <th>Carnet</th>
-          <th>Apellidos</th>
-          <th>Nombre</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="g in guardias" :key="g.id">
-          <td>{{ g.dia }}</td>
-          <td>{{ g.horario }}</td>
-          <td>{{ g.carnet }}</td>
-          <td>{{ g.apellidos }}</td>
-          <td>{{ g.nombre }}</td>
-        </tr>
+    <div class="panel-body">
+      <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+        <table class="table table-bordered table-striped text-center align-middle">
+          <thead>
+            <tr class="bg-primary text-white">
+              <th>Día</th>
+              <th>Horario</th>
+              <th>Carnet</th>
+              <th>Apellidos</th>
+              <th>Nombre</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="g in guardias" :key="g.id">
+              <td>{{ g.dia }}</td>
+              <td>{{ g.horario }}</td>
+              <td>{{ g.carnet }}</td>
+              <td>{{ g.apellidos }}</td>
+              <td>{{ g.nombre }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-      </tbody>
-    </table>
-  </div>
-  <div v-if="error" class="text-danger mt-2">{{ error }}</div>
-</div>
-    <div v-if="loading">Cargando planificación...</div>
-    <div v-if="error">{{ error }}</div>
+      <!-- ✅ External loading and error messages -->
+      <div v-if="loading" class="text-muted mt-3">Cargando planificación...</div>
+      <div v-if="error" class="text-danger mt-2">{{ error }}</div>
+    </div>
   </div>
 </template>
 

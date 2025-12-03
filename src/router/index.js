@@ -25,21 +25,30 @@ const routes = [
         path: 'workers', // esto crea /workers dentro de Home
         component: Workers
       },
-      { path: '/planif', 
-        component: PlanificationCards 
+      {
+        path: '/planif',
+        component: PlanificationCards
       },
-      { path: '/planif/:id', 
-        component: PlanificationList 
+      {
+        path: '/planif/:id',
+        component: PlanificationList
       },
       {
         path: 'students', // esto crea /students dentro de Home
         component: Students
       },
-      { path: '/assistance', 
-        component: AssistanceCards 
+      {
+        path: '/assistance',
+        component: AssistanceCards
       },
-      { path: '/assistance/list', 
-        component: AssistanceList 
+      // {
+      //   path: '/assistance/list',
+      //   component: AssistanceList
+      // },
+      {
+        path: '/assistance/list/:fecha',
+        name: 'AssistanceList',
+        component: () => import('@/views/assistance/AssistanceList.vue')
       },
       {
         path: 'users', // esto crea /users dentro de Home
