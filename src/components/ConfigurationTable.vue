@@ -3,17 +3,19 @@
     <table class="table table-striped table-bordered table-hover table-clickable">
       <thead class="table-header">
         <tr>
-          <th v-for="col in columns" :key="col.key">{{ col.label }}</th>
+          <th>{{ columns[0].label }}</th> <!-- Día -->
+          <th v-for="col in columns.slice(1)" :key="col.key">{{ col.label }}</th>
         </tr>
       </thead>
       <tbody>
         <template v-if="groupByDay">
-          <!-- Corregido: v-for con :key como atributo separado -->
           <template v-for="(group, dayName) in grouped" :key="dayName">
+            <!-- Fila de agrupación por día -->
             <tr class="day-row">
               <td class="day-cell" rowspan="1">{{ dayName }}</td>
-              <td class="empty-cell" colspan="4"></td>
+              <td class="empty-cell" :colspan="columns.length - 1"></td>
             </tr>
+            <!-- Filas de datos del día (sin la columna de día) -->
             <tr
               v-for="(item, idx) in group"
               :key="dayName + '-' + idx"
@@ -21,11 +23,8 @@
               class="row-click"
               @click="$emit('edit', item)"
             >
-              <td class="day-spacer"></td>
-              <td>{{ item.time }}</td>
-              <td>{{ item.persons }}</td>
-              <td>{{ item.sex }}</td>
-              <td>{{ item.break }}</td>
+              <td></td> <!-- celda vacía donde estaría el día, para alinear -->
+              <td v-for="col in columns.slice(1)" :key="col.key">{{ item[col.key] }}</td>
             </tr>
           </template>
         </template>
@@ -37,11 +36,7 @@
             class="row-click"
             @click="$emit('edit', item)"
           >
-            <td>{{ item.day }}</td>
-            <td>{{ item.time }}</td>
-            <td>{{ item.persons }}</td>
-            <td>{{ item.sex }}</td>
-            <td>{{ item.break }}</td>
+            <td v-for="col in columns" :key="col.key">{{ item[col.key] }}</td>
           </tr>
         </template>
       </tbody>
@@ -60,7 +55,6 @@ const props = defineProps({
 
 defineEmits(['edit'])
 
-// Agrupar por día para simular la estructura visual
 const grouped = computed(() => {
   const map = {}
   for (const r of props.rows) {

@@ -64,6 +64,7 @@ const columns = [
   { key: 'time', label: 'Horario' },
   { key: 'persons', label: 'Personas' },
   { key: 'sex', label: 'Sexo' },
+  { key: 'personType', label: 'Tipo' },  // <-- Aquí nueva columna!
   { key: 'break', label: 'Receso' }
 ]
 
@@ -85,34 +86,53 @@ function closeModal() {
 }
 
 function handleSubmit(payload) {
-  const { day, persons, sex, break: isBreak, schedules } = payload
+  const { day, persons, sex, break: isBreak, schedules, personType } = payload
 
-  // Remove old item if editing
   if (selectedItem.value) {
     const idx = rows.value.findIndex(r =>
       r.day === selectedItem.value.day &&
       r.time === selectedItem.value.time &&
       r.persons === selectedItem.value.persons &&
       r.sex === selectedItem.value.sex &&
-      r.break === selectedItem.value.break
+      r.break === selectedItem.value.break &&
+      r.personType === selectedItem.value.personType
     )
     if (idx !== -1) rows.value.splice(idx, 1)
   }
 
-  // Add new rows
   for (const s of schedules) {
     rows.value.push({
       day,
       time: `${s.start} - ${s.end}`,
       persons: Number(persons),
       sex,
-      break: isBreak ? 'Sí' : 'No'
+      break: isBreak ? 'Sí' : 'No',
+      personType
     })
   }
-
   closeModal()
 }
 
+// Nuevo mapeo para tipo y sexo legible
+function mapDiaSemana(num) {
+  const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+  return dias[num % 7] || 'Desconocido'
+}
+
+function mapSexo(sexo) {
+  if (!sexo) return 'Ambos'
+  if (sexo === 'M' || sexo === 'Masculino') return 'Masculino'
+  if (sexo === 'F' || sexo === 'Femenino') return 'Femenino'
+  return sexo
+}
+
+function mapTipoPersona(nombreTipo) {
+  if (!nombreTipo) return 'Ambos'  // Si es null, undefined o vacío, mostrar "Ambos"
+  // Puedes personalizar según tus valores reales de backend aquí:
+  return nombreTipo
+}
+
+// Nuevo onMounted con mapeo limpio
 onMounted(async () => {
   loading.value = true
   try {
@@ -121,8 +141,9 @@ onMounted(async () => {
       day: mapDiaSemana(c.diaSemana),
       time: `${c.horario.inicio} - ${c.horario.fin}`,
       persons: c.cantPersonas,
-      sex: mapSexo(c.sexo, c.tipoPersona?.nombre),
-      break: 'Sí' // or map from another field if needed
+      sex: mapSexo(c.sexo),
+      personType: mapTipoPersona(c.tipoPersona?.nombre),
+      break: c.receso ? 'Sí' : 'No'
     }))
   } catch (err) {
     error.value = 'No se pudo cargar la configuración'
@@ -131,15 +152,4 @@ onMounted(async () => {
     loading.value = false
   }
 })
-function mapDiaSemana(num) {
-  const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-  return dias[num % 7] || 'Desconocido'
-}
-
-function mapSexo(sexo, tipoPersonaNombre) {
-  if (sexo === 'M') return 'Masculino'
-  if (sexo === 'F') return 'Femenino'
-  return tipoPersonaNombre || 'Ambos'
-}
-
 </script>
