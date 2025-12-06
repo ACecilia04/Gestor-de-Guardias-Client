@@ -117,7 +117,7 @@ const emit = defineEmits(['onClose', 'onSubmit'])
 
 const form = reactive({
   persons: props.initial?.persons ?? 1,
-  personType: 'Ambos',
+  personType: props.initial?.personType ?? 'Ambos',
   sex: props.initial?.sex ?? 'Ambos',
   day: props.initial?.day ?? 'Lunes',
   break: props.initial?.break ?? false

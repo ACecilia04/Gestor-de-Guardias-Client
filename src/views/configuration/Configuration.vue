@@ -64,7 +64,7 @@ const columns = [
   { key: 'time', label: 'Horario' },
   { key: 'persons', label: 'Personas' },
   { key: 'sex', label: 'Sexo' },
-  { key: 'personType', label: 'Tipo' },  // <-- Aquí nueva columna!
+  { key: 'personType', label: 'Tipo' },  
   { key: 'break', label: 'Receso' }
 ]
 
