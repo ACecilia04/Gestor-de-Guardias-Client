@@ -91,9 +91,36 @@ const editTurno = (fecha, turno) => {
 }
 
 const updateTurno = (updatedTurno) => {
+  // Buscar el día correspondiente
   const dia = dias.value.find(d => d.fecha === selectedFecha.value)
-  const idx = dia?.turnos.findIndex(t => t.horario.inicio === updatedTurno.horario.inicio && t.horario.fin === updatedTurno.horario.fin)
-  if (idx !== -1) dia.turnos[idx] = updatedTurno
+  if (!dia) {
+    console.warn('No se encontró el día para la fecha:', selectedFecha.value)
+    // Cerrar el editor para evitar quedar en estado inconsistente
+    selectedTurno.value = null
+    return
+  }
+
+  // Si el turno tiene un id único, usarlo; si no, comparar por horario
+  let idx = -1
+  if (updatedTurno.id !== undefined && updatedTurno.id !== null) {
+    idx = dia.turnos.findIndex(t => t.id === updatedTurno.id)
+  } else {
+    idx = dia.turnos.findIndex(t =>
+      t.horario?.inicio === updatedTurno.horario?.inicio &&
+      t.horario?.fin === updatedTurno.horario?.fin
+    )
+  }
+
+  if (idx !== -1) {
+    // Reemplazar turno existente
+    dia.turnos[idx] = updatedTurno
+  } else {
+    // Fallback: si no se encontró el turno por las claves anteriores,
+    // opcionalmente agregarlo para mantener consistencia visual.
+    // Si no querés este comportamiento, podés eliminar la siguiente línea.
+    dia.turnos.push(updatedTurno)
+  }
+
   selectedTurno.value = null
 }
 
