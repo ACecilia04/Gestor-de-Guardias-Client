@@ -31,11 +31,13 @@
               <td>{{ g.nombre }}</td>
               <td>
                 <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" :name="'asistencia-' + g.id" value="cumplido" v-model="g.asistencia" />
+                  <input class="form-check-input" type="radio" :name="'asistencia-' + g.id" value="cumplido"
+                    v-model="g.asistencia" />
                   <label class="form-check-label">Cumplido</label>
                 </div>
                 <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" :name="'asistencia-' + g.id" value="incumplido" v-model="g.asistencia" />
+                  <input class="form-check-input" type="radio" :name="'asistencia-' + g.id" value="incumplido"
+                    v-model="g.asistencia" />
                   <label class="form-check-label">Incumplido</label>
                 </div>
               </td>
@@ -51,10 +53,10 @@
 </template>
 
 <script setup>
-// import { getAsistenciasPdf } from '@/services/exportService' // TODO: integrar servicio API
 import { getTurnosAPartirDe } from '@/services/planificationService' // or assistanceService
 import { useRoute } from 'vue-router'
 import { ref, onMounted } from 'vue'
+import { exportAsistenciasToPdf } from '@/services/exportService'
 
 const guardias = ref([])
 const loading = ref(true)
@@ -62,6 +64,7 @@ const error = ref(null)
 const route = useRoute()
 const fecha = route.params.fecha
 const props = defineProps({ fecha: String })
+
 onMounted(async () => {
   try {
     const response = await getTurnosAPartirDe(fecha)
@@ -69,6 +72,7 @@ onMounted(async () => {
 
     guardias.value = turnos.map((t, index) => ({
       id: t.id || index,
+      fecha: t.fecha, 
       dia: new Date(t.fecha).toLocaleDateString('es-ES', {
         day: 'numeric',
         weekday: 'long'
@@ -79,6 +83,7 @@ onMounted(async () => {
       nombre: t.personaAsignada?.nombre || '',
       asistencia: t.cumplimiento ?? null
     }))
+
   } catch (err) {
     error.value = 'No se pudieron cargar las asistencias.'
     console.error(err)
@@ -87,11 +92,47 @@ onMounted(async () => {
   }
 })
 
-function exportToPdf() {
-  // TODO: conectar con API o fallback de frontend
-  // Ejemplo futuro:
-  // const blob = await getAsistenciasPdf({ /* filtros */ })
-  // downloadBlob(blob, 'asistencias.pdf')
-  console.log('[Export] Asistencias -> PDF (pendiente de servicio)')
+async function exportToPdf() {
+  try {
+    // Group guardias by fecha
+    const grouped = {}
+    for (const g of guardias.value) {
+      const fecha = g.fecha // must be a valid LocalDate string
+      if (!grouped[fecha]) grouped[fecha] = []
+      grouped[fecha].push(g)
+    }
+
+    // Build plantilla structure
+    const plantilla = Object.entries(grouped).map(([fecha, turnos]) => ({
+      fecha, //  must be ISO string like "2025-12-03"
+      turnos: turnos.map(g => ({
+        horario: {
+          inicio: g.horario.split(' - ')[0],
+          fin: g.horario.split(' - ')[1]
+        },
+        personaAsignada: {
+          nombre: g.nombre,
+          apellido: g.apellidos,
+          carnet: g.carnet
+        },
+        cumplimiento: g.asistencia === 'cumplido'
+      }))
+    }))
+
+console.log('📦 Plantilla enviada al backend:', JSON.stringify(plantilla, null, 2))
+    const response = await exportAsistenciasToPdf(plantilla, 'asistencias.pdf')
+
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'asistencias.pdf')
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  } catch (err) {
+    console.error('Error exportando PDF:', err)
+  }
 }
+
 </script>

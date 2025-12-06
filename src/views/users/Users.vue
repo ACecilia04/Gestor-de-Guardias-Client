@@ -14,14 +14,8 @@
         </div>
 
         <div class="panel-body">
-          <div
-            class="table-responsive"
-            data-pattern="priority-columns"
-            data-focus-btn-icon="fa-asterisk"
-            data-sticky-table-header="true"
-            data-add-display-all-btn="true"
-            data-add-focus-btn="true"
-          >
+          <div class="table-responsive" data-pattern="priority-columns" data-focus-btn-icon="fa-asterisk"
+            data-sticky-table-header="true" data-add-display-all-btn="true" data-add-focus-btn="true">
             <table class="table table-striped table-bordered table-clickable" cellspacing="0" width="100%">
               <thead>
                 <tr>
@@ -30,11 +24,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr
-                  v-for="usuario in usuarios"
-                  :key="usuario.id"
-                  @click="openEditionForm(usuario)"
-                >
+                <tr v-for="usuario in usuariosFiltrados" :key="usuario.id" @click="openEditionForm(usuario)">
                   <td>{{ usuario.nombre }}</td>
                   <td>{{ usuario.rol.nombre }}</td>
                 </tr>
@@ -63,6 +53,11 @@
 import { onMounted, ref } from 'vue'
 import { getAllUsuarios } from '@/services/userService'
 import UserEdition from './UserEdition.vue'
+import { computed } from 'vue'
+
+const usuariosFiltrados = computed(() =>
+  usuarios.value.filter(u => u.rol?.nombre?.toLowerCase() !== 'desarrollador')
+)
 
 const usuarios = ref([])
 const showModal = ref(false)
@@ -85,16 +80,16 @@ const error = ref(null)
 onMounted(async () => {
   loading.value = true
   try {
-  const response = await getAllUsuarios()
-  console.log('Usuarios:', response.data)
+    const response = await getAllUsuarios()
+    console.log('Usuarios:', response.data)
 
-  if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE')) {
-    throw new Error('API returned HTML instead of JSON')
-  }
-  usuarios.value = response.data
-} catch (err) {
-  error.value = 'No se pudieron cargar los usuarios'
-  console.error('Error al cargar usuarios:', err)
+    if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE')) {
+      throw new Error('API returned HTML instead of JSON')
+    }
+    usuarios.value = response.data
+  } catch (err) {
+    error.value = 'No se pudieron cargar los usuarios'
+    console.error('Error al cargar usuarios:', err)
   } finally {
     loading.value = false
   }

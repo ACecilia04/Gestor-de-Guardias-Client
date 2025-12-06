@@ -11,6 +11,7 @@ import Configuration from '@/views/configuration/Configuration.vue'
 import { isAuthenticated } from '@/services/authenticationService'
 import AssistanceCards from '@/views/assistance/AssistanceCards.vue'
 import AssistanceList from '@/views/assistance/AssistanceList.vue'
+import Plantilla from '../views/plantilla/Plantilla.vue'
 
 const routes = [
   {
@@ -57,7 +58,13 @@ const routes = [
       {
         path: 'configuration', // esto crea /configuration dentro de Home
         component: Configuration
+      },
+      {
+        path: '/plantilla',
+        name: 'Plantilla',
+        component: Plantilla
       }
+
     ],
     beforeEnter: async (to, from, next) => {
       const valid = await isAuthenticated()
