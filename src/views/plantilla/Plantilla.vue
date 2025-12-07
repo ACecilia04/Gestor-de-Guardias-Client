@@ -2,57 +2,54 @@
   <div class="panel panel-default">
     <div class="panel-heading">
       <h3 class="panel-title">Nueva Planificación</h3>
-
       <div class="panel-options">
-        <button
-          class="action-btn action-btn-outline"
-          @click.prevent="loadPlantilla(false)"
-          :disabled="loading"
-          title="Crear desde próximo mes"
-          aria-label="Crear desde próximo mes"
-        >
-          <i class="fa fa-calendar-plus-o" aria-hidden="true"></i>
-          <span class="visually-hidden">Crear desde próximo mes</span>
-        </button>
+        <!-- Crear plantilla (próximo mes / hoy) -->
+        <a href="#" @click.prevent="loadPlantilla(false)" title="Crear desde próximo mes" :class="{ disabled: loading }">
+          <i class="fa fa-calendar"></i>
+        </a>
 
-        <button
-          class="action-btn"
-          @click.prevent="loadPlantilla(true)"
-          :disabled="loading"
-          title="Crear desde hoy"
-          aria-label="Crear desde hoy"
-        >
-          <i class="fa fa-calendar-check-o" aria-hidden="true"></i>
-          <span class="visually-hidden">Crear desde hoy</span>
-        </button>
+        <a href="#" @click.prevent="loadPlantilla(true)" title="Crear desde hoy" :class="{ disabled: loading }">
+          <i class="fa fa-calendar"></i>
+        </a>
+
+        <!-- Nuevo: crear planificacion automáticamente (usa dias actuales) -->
+        <a href="#" @click.prevent="crearAutomatica" title="Crear planificación automáticamente" :class="{ disabled: creatingAuto || loading }">
+          <i class="fa fa-magic"></i>
+        </a>
+
+        <!-- Nuevo: guardar turnos en backend y navegar a /planif -->
+        <a href="#" @click.prevent="guardarTodos" title="Guardar turnos y ver planificación" :class="{ disabled: saving || loading }">
+          <i class="fa fa-floppy-o"></i>
+        </a>
       </div>
     </div>
-
     <div class="panel-body">
       <div v-if="loading">Cargando plantilla...</div>
       <div v-if="error" class="text-danger">{{ error }}</div>
 
-      <div class="table-responsive" style="max-height: 400px; overflow-y: auto;" v-if="guardias.length">
-        <table class="table table-bordered table-striped">
-          <thead>
-            <tr class="bg-primary text-white">
-              <th>Día</th>
-              <th>Horario</th>
-              <th>Carnet</th>
-              <th>Apellidos</th>
-              <th>Nombre</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="g in guardias" :key="g.id" @click="onRowClick(g)" style="cursor: pointer;">
-              <td>{{ g.dia }}</td>
-              <td>{{ g.horario }}</td>
-              <td>{{ g.carnet }}</td>
-              <td>{{ g.apellidos }}</td>
-              <td>{{ g.nombre }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div v-if="dias.length" class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+        <div v-for="dia in dias" :key="dia.fecha" class="mb-4">
+          <h5 class="text-primary">{{ formatDate(dia.fecha) }}</h5>
+          <table class="table table-hover table-bordered table-striped table-clickable">
+            <thead>
+              <tr>
+                <th>Horario</th>
+                <th>Persona Asignada</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(turno, idx) in dia.turnos"
+                :key="turno.id ?? idx"
+                @click="editTurno(dia.fecha, turno)"
+                style="cursor: pointer;"
+              >
+                <td>{{ turno.horario?.inicio ?? '' }} - {{ turno.horario?.fin ?? '' }}</td>
+                <td>{{ turno.personaAsignada?.nombre  || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div v-else-if="!loading && !error" class="text-muted">
@@ -60,6 +57,8 @@
       </div>
     </div>
 
+    <!-- TurnoEditor as a side panel with backdrop.
+         Note: TurnoEditor itself is fixed-positioned; we render a backdrop and the component when editing. -->
     <div v-if="selectedTurno">
       <div class="modal-backdrop fade in" style="height: 100vh;"></div>
       <TurnoEditor
@@ -73,106 +72,155 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { crearPlantilla } from '@/services/plantillaService'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { crearPlantilla, crearPlanificacionAutomaticamente } from '@/services/plantillaService'
+import { guardarTurnos } from '@/services/planificationService'
 import TurnoEditor from './TurnoEditor.vue'
 
 const dias = ref([])
 const loading = ref(false)
 const error = ref(null)
 
+const creatingAuto = ref(false)
+const saving = ref(false)
+
 const selectedTurno = ref(null)
 const selectedFecha = ref(null)
 
-const safeFormatDay = (iso) => {
-  try {
-    if (!iso && iso !== '') return ''
-    const d = new Date(iso)
-    if (Number.isNaN(d.getTime())) return String(iso)
-    return d.toLocaleDateString('es-ES', { day: 'numeric', weekday: 'long' })
-  } catch {
-    return String(iso)
-  }
-}
+const router = useRouter()
 
-const safeToString = (v) => {
-  if (v === undefined || v === null) return ''
-  if (typeof v === 'string') return v
-  try { return String(v) } catch { return '' }
-}
-
+/*
+  Cargar plantilla (ya existente)
+*/
 const loadPlantilla = async (empezarHoy) => {
   loading.value = true
   error.value = null
   try {
     const response = await crearPlantilla(empezarHoy)
     const payload = response?.data ?? response
-
-    // normalizar a array de dias con turnos
-    const arr = Array.isArray(payload) ? payload : (Array.isArray(payload?.dias) ? payload.dias : [])
-    dias.value = arr.map(d => ({
-      fecha: d?.fecha ?? null,
-      turnos: Array.isArray(d?.turnos) ? d.turnos : []
-    }))
-    console.log('Plantilla cargada (dias):', dias.value)
+    dias.value = Array.isArray(payload) ? payload : []
+    if (!Array.isArray(dias.value)) {
+      dias.value = []
+      error.value = 'Respuesta inesperada del servidor'
+    }
   } catch (err) {
     console.error('Error loadPlantilla:', err)
     error.value = 'Error cargando plantilla'
-    dias.value = []
   } finally {
     loading.value = false
   }
 }
 
-// Computed: robusto y defensivo — evita llamadas a métodos inexistentes y captura errores.
-const guardias = computed(() => {
-  try {
-    if (!Array.isArray(dias.value)) return []
+/*
+  Crear planificación automáticamente: llamamos al endpoint que crea la planificación
+  en el backend. Se espera un payload de días; aquí enviamos los días actuales si existen.
+*/
+// usar la implementación que asume que crearPlanificacionAutomaticamente devuelve los dias ya asignados
+const crearAutomatica = async () => {
+  if (creatingAuto.value || loading.value) return
 
-    const list = []
-    for (const d of dias.value) {
-      const diaStr = d?.fecha ?? ''
-      const prettyDia = safeFormatDay(diaStr)
-      const turnos = Array.isArray(d?.turnos) ? d.turnos : []
-
-      for (let idx = 0; idx < turnos.length; idx++) {
-        const t = turnos[idx]
-        // proteger tipos inesperados: convertir inicio/fin a string antes de slice
-        const inicioRaw = t?.horario?.inicio
-        const finRaw = t?.horario?.fin
-        const inicio = safeToString(inicioRaw).slice(0, 5)
-        const fin = safeToString(finRaw).slice(0, 5)
-        const horario = (inicio || fin) ? (inicio && fin ? `${inicio} - ${fin}` : (inicio || fin)) : ''
-
-        list.push({
-          id: t?.id ?? `${diaStr}-${idx}`,
-          rawDia: diaStr,
-          dia: prettyDia,
-          horario,
-          carnet: t?.personaAsignada?.carnet ?? '',
-          apellidos: t?.personaAsignada?.apellido ?? '',
-          nombre: t?.personaAsignada?.nombre ?? '',
-          turno: t
-        })
-      }
+  if (!dias.value || dias.value.length === 0) {
+    await loadPlantilla(false)
+    if (!dias.value || dias.value.length === 0) {
+      error.value = 'No se pudo generar la plantilla base para asignar personas.'
+      return
     }
-    return list
-  } catch (err) {
-    console.error('Error en computed guardias:', err)
-    // devolver array vacío en caso de fallo para que la UI no rompa
-    return []
   }
-})
 
-const onRowClick = (g) => {
-  selectedFecha.value = g.rawDia
+  creatingAuto.value = true
+  error.value = null
+
   try {
-    selectedTurno.value = JSON.parse(JSON.stringify(g.turno))
-  } catch {
-    selectedTurno.value = { ...g.turno }
+    // Enviar 'dias' al backend; backend devolverá los mismos dias con personasAsignadas rellenadas
+    const resp = await crearPlanificacionAutomaticamente(dias.value)
+    const assignedDias = resp?.data ?? resp
+
+    if (Array.isArray(assignedDias) && assignedDias.length > 0) {
+      // actualizar UI con los turnos ya asignados por el backend
+      dias.value = assignedDias
+    } else {
+      // fallback: recargar desde server si no viene body
+      await loadPlantilla(false)
+    }
+  } catch (err) {
+    console.error('Error crearAutomatica:', err)
+    error.value = 'Error al crear automáticamente la planificación'
+  } finally {
+    creatingAuto.value = false
   }
 }
 
+/*
+  Guardar todos los turnos (guardarTurnos) filtrando únicamente los turnos que
+  tienen personaAsignada. Los turnos sin personaAsignada NO se incluirán en la petición.
+  Si no hay ningún turno con persona asignada se muestra mensaje y no se llama al backend.
+*/
+const guardarTodos = async () => {
+  if (saving.value || loading.value) return
+  if (!dias.value || dias.value.length === 0) {
+    error.value = 'No hay turnos para guardar.'
+    return
+  }
+
+  // Construir payload filtrado: mantener solo días con al menos un turno con personaAsignada
+  const payloadDias = []
+  let totalTurnos = 0
+  let turnosConPersona = 0
+
+  for (const d of dias.value) {
+    const turnos = Array.isArray(d.turnos) ? d.turnos : []
+    totalTurnos += turnos.length
+    const turnosAsignados = turnos.filter(t => t?.personaAsignada && (t.personaAsignada.id !== undefined && t.personaAsignada.id !== null))
+    turnosConPersona += turnosAsignados.length
+    if (turnosAsignados.length > 0) {
+      // enviar sólo la estructura mínima necesaria; si backend necesita más campos ajusta aquí
+      payloadDias.push({
+        fecha: d.fecha,
+        turnos: turnosAsignados
+      })
+    }
+  }
+
+  if (turnosConPersona === 0) {
+    error.value = 'No hay turnos con persona asignada para guardar.'
+    return
+  }
+
+  saving.value = true
+  error.value = null
+  try {
+    // Llamada al backend con sólo los turnos que tienen persona asignada
+    await guardarTurnos(payloadDias)
+
+    // Opcional: informar cuántos turnos se guardaron vs cuántos fueron ignorados
+    console.log(`guardarTurnos: enviados ${turnosConPersona} turnos de ${totalTurnos} totales`)
+
+    // Navegar a la pantalla de planificaciones
+    router.push('/planif')
+  } catch (err) {
+    console.error('Error guardarTurnos:', err)
+    error.value = 'Error guardando turnos en el servidor'
+  } finally {
+    saving.value = false
+  }
+}
+
+/*
+  Editar turno (mantener copy para el editor)
+*/
+const editTurno = (fecha, turno) => {
+  selectedFecha.value = fecha
+  try {
+    selectedTurno.value = JSON.parse(JSON.stringify(turno))
+  } catch (e) {
+    selectedTurno.value = { ...turno }
+  }
+}
+
+/*
+  Actualizar turno dentro de dias (idéntico a tu implementación)
+*/
 const updateTurno = (updatedTurno) => {
   const dia = dias.value.find(d => d.fecha === selectedFecha.value)
   if (!dia) {
@@ -186,108 +234,50 @@ const updateTurno = (updatedTurno) => {
     idx = dia.turnos.findIndex(t => t.id === updatedTurno.id)
   } else {
     idx = dia.turnos.findIndex(t =>
-      safeToString(t?.horario?.inicio) === safeToString(updatedTurno?.horario?.inicio) &&
-      safeToString(t?.horario?.fin) === safeToString(updatedTurno?.horario?.fin)
+      t.horario?.inicio === updatedTurno.horario?.inicio &&
+      t.horario?.fin === updatedTurno.horario?.fin
     )
   }
 
   if (idx !== -1) {
     dia.turnos[idx] = updatedTurno
   } else {
-    console.warn('No se encontró el turno para actualizar, no se añade automáticamente.', updatedTurno)
+    console.warn('No se encontró el turno para actualizar. Considerar agregarlo manualmente.', updatedTurno)
   }
 
   selectedTurno.value = null
 }
+
+const formatDate = (iso) => {
+  try {
+    return new Date(iso).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+  } catch (e) {
+    return iso
+  }
+}
 </script>
 
 <style scoped>
-/* forzar que el header mantenga su posición y los botones sean visibles */
-.panel-heading {
-  position: relative;
-  background: #fff;
-  color: #222;
-  display: block;
-  padding: 16px 24px;
-  border-bottom: 1px solid #eee;
-}
-
-/* título centrado visualmente */
-.panel-title {
-  margin: 0;
-  text-align: center;
-  font-size: 1.05rem;
-  font-weight: 600;
-}
-
-/* opciones posicionadas a la derecha, siempre visibles */
-.panel-options {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  z-index: 5;
-}
-
-.action-btn {
-  background-color: #0066CC;
-  color: #fff;
-  border: none;
-  padding: 6px 10px;
+div.panel-heading > div.panel-options a {
+  float: right;
+  font-size: 13px;
+  padding: 5px 10px;
+  border: 1px solid #ddd;
   border-radius: 4px;
-  cursor: pointer;
+  margin-left: 6px;
+  color: inherit;
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.95rem;
+  justify-content: center;
 }
-.action-btn:disabled {
+div.panel-heading > div.panel-options a.disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+  pointer-events: none;
 }
 
-.action-btn-outline {
-  background: #fff;
-  color: #0066CC;
-  border: 1px solid #0066CC;
-}
-
-.visually-hidden {
-  border: 0 !important;
-  clip: rect(1px, 1px, 1px, 1px) !important;
-  clip-path: inset(50%) !important;
-  height: 1px !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  padding: 0 !important;
-  position: absolute !important;
-  width: 1px !important;
-  white-space: nowrap !important;
-}
-
-.table th {
-  background-color: #fff !important;
-  color: #000 !important;
-  font-weight: 600;
-}
-
-.table-striped>tbody>tr:nth-of-type(odd) {
-  background-color: #f8f9fc;
-}
-
-.table-hover tbody tr:hover {
-  background-color: #e6f0ff;
-}
-
-.panel {
-  transition: all 0.3s ease;
-}
-
-.panel:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 14px rgba(0, 90, 170, 0.25);
+/* icon sizing */
+div.panel-heading > div.panel-options i.fa {
+  font-size: 14px;
 }
 </style>
