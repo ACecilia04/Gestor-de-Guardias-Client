@@ -1,3 +1,4 @@
+// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/home/Home.vue'
 import Login from '@/views/login/Login.vue'
@@ -8,10 +9,11 @@ import Users from '@/views/users/Users.vue'
 import PlanificationCards from '@/views/planif/PlanificationCards.vue'
 import PlanificationList from '@/views/planif/PlanificationList.vue'
 import Configuration from '@/views/configuration/Configuration.vue'
-import { isAuthenticated } from '@/services/authenticationService'
 import AssistanceCards from '@/views/assistance/AssistanceCards.vue'
 import AssistanceList from '@/views/assistance/AssistanceList.vue'
-import Plantilla from '../views/plantilla/Plantilla.vue'
+import Plantilla from '@/views/plantilla/Plantilla.vue'
+import { isAuthenticated } from '@/services/authenticationService'
+import { puedeVer } from '@/auth/permissions'
 
 const routes = [
   {
@@ -19,67 +21,73 @@ const routes = [
     component: Home,
     children: [
       {
-        path: 'roles', // esto crea /roles dentro de Home
-        component: Roles
+        path: 'roles',
+        component: Roles,
+        meta: { permiso: 'roles' }
       },
       {
-        path: 'workers', // esto crea /workers dentro de Home
-        component: Workers
+        path: 'workers', 
+        component: Workers, 
+        meta: { permiso: 'workers' }
+      },
+      { 
+        path: 'students', 
+        component: Students, 
+        meta: { permiso: 'students' } 
+      },
+      { 
+        path: 'users', 
+        component: Users,
+        meta: { permiso: 'users' } 
+      },
+      { 
+        path: 'configuration', 
+        component: Configuration, 
+        meta: { permiso: 'configuration' } 
       },
       {
-        path: '/planif',
-        component: PlanificationCards
+        path: 'planif', 
+        component: PlanificationCards, 
+        meta: { permiso: 'planif' } 
       },
-      {
-        path: '/planif/:id',
-        component: PlanificationList
+      { 
+        path: 'planif/:id', 
+        component: PlanificationList, 
+        meta: { permiso: 'planif' } 
       },
-      {
-        path: 'students', // esto crea /students dentro de Home
-        component: Students
+      { 
+        path: 'assistance', 
+        component: AssistanceCards, 
+        meta: { permiso: 'assistance' } 
       },
-      {
-        path: '/assistance',
-        component: AssistanceCards
+      { 
+        path: 'assistance/list/:fecha', 
+        name: 'AssistanceList', 
+        component: AssistanceList, 
+        meta: { permiso: 'assistance' } 
       },
-      // {
-      //   path: '/assistance/list',
-      //   component: AssistanceList
-      // },
-      {
-        path: '/assistance/list/:fecha',
-        name: 'AssistanceList',
-        component: () => import('@/views/assistance/AssistanceList.vue')
-      },
-      {
-        path: 'users', // esto crea /users dentro de Home
-        component: Users
-      },
-      {
-        path: 'configuration', // esto crea /configuration dentro de Home
-        component: Configuration
-      },
-      {
-        path: '/plantilla',
-        name: 'Plantilla',
-        component: Plantilla
+      { 
+        path: 'plantilla', 
+        name: 'Plantilla', 
+        component: Plantilla, 
+        meta: { permiso: 'planif' } 
       }
-
     ],
     beforeEnter: async (to, from, next) => {
       const valid = await isAuthenticated()
-      if (valid) {
+      if (!valid) return next('/login')
+
+      const rol = localStorage.getItem('rol')?.toLowerCase()
+      const permiso = to.meta?.permiso
+      if (!permiso || puedeVer(rol, permiso)) {
+        console.log("unauthorized")
         next()
       } else {
-        next('/login')
+        next('/login') // o redirige a /forbidden
       }
     }
   },
-
-  {
-    path: '/login',
-    component: Login
-  }
+  { path: '/login', component: Login }
 ]
 
 const router = createRouter({
@@ -88,5 +96,3 @@ const router = createRouter({
 })
 
 export default router
-
-
