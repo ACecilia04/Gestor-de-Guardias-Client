@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-// src/services/turnoDeGuardiaService.js
-=======
-// src/services/planificationService.js
->>>>>>> f52e494 (fix: update crearPlantilla API call for improved functionality)
 import axios from 'axios'
 
 const turnoApi = axios.create({
