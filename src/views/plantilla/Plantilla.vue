@@ -45,7 +45,17 @@
                 style="cursor: pointer;"
               >
                 <td>{{ turno.horario?.inicio ?? '' }} - {{ turno.horario?.fin ?? '' }}</td>
-                <td>{{ turno.personaAsignada?.nombre  || '—' }}</td>
+                <!-- Mostrar solo la primera persona (personaAsignada o personasAsignadas[0]) -->
+                <td>
+                  {{
+                    (() => {
+                      const p = turno.personaAsignada || (Array.isArray(turno.personasAsignadas) ? turno.personasAsignadas[0] : null)
+                      return p
+                        ? (p.nombre || '') + ' ' + (p.apellido || '') + (p.carnet ? (' (' + p.carnet + ')') : '')
+                        : '—'
+                    })()
+                  }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -57,8 +67,7 @@
       </div>
     </div>
 
-    <!-- TurnoEditor as a side panel with backdrop.
-         Note: TurnoEditor itself is fixed-positioned; we render a backdrop and the component when editing. -->
+    <!-- Backdrop + editor mientras se edita -->
     <div v-if="selectedTurno">
       <div class="modal-backdrop fade in" style="height: 100vh;"></div>
       <TurnoEditor
@@ -98,11 +107,16 @@ const loadPlantilla = async (empezarHoy) => {
   error.value = null
   try {
     const response = await crearPlantilla(empezarHoy)
+    console.log('[crearPlantilla] raw response:', response)
+
     const payload = response?.data ?? response
+    console.log('[crearPlantilla] payload used:', payload)
+
     dias.value = Array.isArray(payload) ? payload : []
     if (!Array.isArray(dias.value)) {
       dias.value = []
       error.value = 'Respuesta inesperada del servidor'
+      console.warn('[crearPlantilla] payload no es array, se fuerza dias=[]')
     }
   } catch (err) {
     console.error('Error loadPlantilla:', err)
@@ -113,10 +127,8 @@ const loadPlantilla = async (empezarHoy) => {
 }
 
 /*
-  Crear planificación automáticamente: llamamos al endpoint que crea la planificación
-  en el backend. Se espera un payload de días; aquí enviamos los días actuales si existen.
+  Crear planificación automáticamente (usa solo la primera persona devuelta por backend)
 */
-// usar la implementación que asume que crearPlanificacionAutomaticamente devuelve los dias ya asignados
 const crearAutomatica = async () => {
   if (creatingAuto.value || loading.value) return
 
@@ -132,15 +144,28 @@ const crearAutomatica = async () => {
   error.value = null
 
   try {
-    // Enviar 'dias' al backend; backend devolverá los mismos dias con personasAsignadas rellenadas
+    console.log('[crearPlanificacionAutomaticamente] input dias:', dias.value)
     const resp = await crearPlanificacionAutomaticamente(dias.value)
+    console.log('[crearPlanificacionAutomaticamente] raw response:', resp)
+
     const assignedDias = resp?.data ?? resp
+    console.log('[crearPlanificacionAutomaticamente] assignedDias used:', assignedDias)
 
     if (Array.isArray(assignedDias) && assignedDias.length > 0) {
-      // actualizar UI con los turnos ya asignados por el backend
-      dias.value = assignedDias
+      // Normalizar: tomar solo la primera persona (si existe) y reflejarla en personaAsignada y personasAsignadas=[primera]
+      dias.value = assignedDias.map(d => ({
+        ...d,
+        turnos: (Array.isArray(d.turnos) ? d.turnos : []).map(t => {
+          const first = t.personaAsignada || (Array.isArray(t.personasAsignadas) ? t.personasAsignadas[0] : null)
+          return {
+            ...t,
+            personaAsignada: first || null,
+            personasAsignadas: first ? [first] : []
+          }
+        })
+      }))
     } else {
-      // fallback: recargar desde server si no viene body
+      console.warn('[crearPlanificacionAutomaticamente] assignedDias vacío o no array, fallback a loadPlantilla(false)')
       await loadPlantilla(false)
     }
   } catch (err) {
@@ -152,9 +177,7 @@ const crearAutomatica = async () => {
 }
 
 /*
-  Guardar todos los turnos (guardarTurnos) filtrando únicamente los turnos que
-  tienen personaAsignada. Los turnos sin personaAsignada NO se incluirán en la petición.
-  Si no hay ningún turno con persona asignada se muestra mensaje y no se llama al backend.
+  Guardar todos los turnos (solo la primera persona por turno, payload mínimo compatible)
 */
 const guardarTodos = async () => {
   if (saving.value || loading.value) return
@@ -163,7 +186,6 @@ const guardarTodos = async () => {
     return
   }
 
-  // Construir payload filtrado: mantener solo días con al menos un turno con personaAsignada
   const payloadDias = []
   let totalTurnos = 0
   let turnosConPersona = 0
@@ -171,16 +193,37 @@ const guardarTodos = async () => {
   for (const d of dias.value) {
     const turnos = Array.isArray(d.turnos) ? d.turnos : []
     totalTurnos += turnos.length
-    const turnosAsignados = turnos.filter(t => t?.personaAsignada && (t.personaAsignada.id !== undefined && t.personaAsignada.id !== null))
+
+    // Construir turnos asignados con solo la primera persona (si existe)
+    const turnosAsignados = turnos
+      .map(t => {
+        const p = t.personaAsignada || (Array.isArray(t.personasAsignadas) ? t.personasAsignadas[0] : null)
+        if (!p || p.id == null) return null
+
+        // Payload mínimo: evita enviar Persona completa y personaAsignada para no romper deserialización
+        return {
+          // incluir id del turno si existe; no es obligatorio para inserción
+          id: t.id ?? null,
+          fecha: d.fecha, // en muchos backends se requiere dentro del turno
+          horario: { id: t.horario?.id },
+          // solo primera persona en lista y solo su id
+          personasAsignadas: [{ id: p.id }]
+        }
+      })
+      .filter(Boolean)
+
     turnosConPersona += turnosAsignados.length
+
     if (turnosAsignados.length > 0) {
-      // enviar sólo la estructura mínima necesaria; si backend necesita más campos ajusta aquí
       payloadDias.push({
         fecha: d.fecha,
         turnos: turnosAsignados
       })
     }
   }
+
+  console.log('[guardarTurnos] resumen conteos:', { totalTurnos, turnosConPersona })
+  console.log('[guardarTurnos] payloadDias (minimo, solo primera persona):', payloadDias)
 
   if (turnosConPersona === 0) {
     error.value = 'No hay turnos con persona asignada para guardar.'
@@ -190,13 +233,9 @@ const guardarTodos = async () => {
   saving.value = true
   error.value = null
   try {
-    // Llamada al backend con sólo los turnos que tienen persona asignada
-    await guardarTurnos(payloadDias)
-
-    // Opcional: informar cuántos turnos se guardaron vs cuántos fueron ignorados
+    const resp = await guardarTurnos(payloadDias)
+    console.log('[guardarTurnos] raw response:', resp)
     console.log(`guardarTurnos: enviados ${turnosConPersona} turnos de ${totalTurnos} totales`)
-
-    // Navegar a la pantalla de planificaciones
     router.push('/planif')
   } catch (err) {
     console.error('Error guardarTurnos:', err)
@@ -210,19 +249,28 @@ const guardarTodos = async () => {
   Editar turno (mantener copy para el editor)
 */
 const editTurno = (fecha, turno) => {
+  console.log('[editTurno] fecha seleccionada:', fecha)
+  console.log('[editTurno] turno original:', turno)
+
   selectedFecha.value = fecha
   try {
     selectedTurno.value = JSON.parse(JSON.stringify(turno))
+    console.log('[editTurno] turno clonado (deep):', selectedTurno.value)
   } catch (e) {
+    console.warn('[editTurno] fallo deep clone, usando shallow copy:', e)
     selectedTurno.value = { ...turno }
+    console.log('[editTurno] turno clonado (shallow):', selectedTurno.value)
   }
 }
 
 /*
-  Actualizar turno dentro de dias (idéntico a tu implementación)
+  Actualizar turno dentro de dias (normalizando a solo la primera persona)
 */
 const updateTurno = (updatedTurno) => {
+  console.log('[updateTurno] updatedTurno recibido:', updatedTurno)
   const dia = dias.value.find(d => d.fecha === selectedFecha.value)
+  console.log('[updateTurno] dia encontrado:', dia)
+
   if (!dia) {
     console.warn('No se encontró el día para la fecha:', selectedFecha.value)
     selectedTurno.value = null
@@ -232,15 +280,24 @@ const updateTurno = (updatedTurno) => {
   let idx = -1
   if (updatedTurno.id !== undefined && updatedTurno.id !== null) {
     idx = dia.turnos.findIndex(t => t.id === updatedTurno.id)
+    console.log('[updateTurno] búsqueda por id, idx:', idx)
   } else {
     idx = dia.turnos.findIndex(t =>
       t.horario?.inicio === updatedTurno.horario?.inicio &&
       t.horario?.fin === updatedTurno.horario?.fin
     )
+    console.log('[updateTurno] búsqueda por horario, idx:', idx)
   }
 
   if (idx !== -1) {
-    dia.turnos[idx] = updatedTurno
+    const before = dia.turnos[idx]
+    const first = updatedTurno.personaAsignada || (Array.isArray(updatedTurno.personasAsignadas) ? updatedTurno.personasAsignadas[0] : null)
+    dia.turnos[idx] = {
+      ...updatedTurno,
+      personaAsignada: first || null,
+      personasAsignadas: first ? [{ id: first.id, nombre: first.nombre, apellido: first.apellido, carnet: first.carnet }] : []
+    }
+    console.log('[updateTurno] reemplazado turno:', { before, after: dia.turnos[idx], idx })
   } else {
     console.warn('No se encontró el turno para actualizar. Considerar agregarlo manualmente.', updatedTurno)
   }
@@ -250,8 +307,11 @@ const updateTurno = (updatedTurno) => {
 
 const formatDate = (iso) => {
   try {
-    return new Date(iso).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+    const formatted = new Date(iso).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+    console.log('[formatDate] input:', iso, 'output:', formatted)
+    return formatted
   } catch (e) {
+    console.warn('[formatDate] fallo al formatear, devolviendo iso:', iso, e)
     return iso
   }
 }
