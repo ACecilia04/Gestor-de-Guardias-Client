@@ -45,7 +45,6 @@
                 style="cursor: pointer;"
               >
                 <td>{{ turno.horario?.inicio ?? '' }} - {{ turno.horario?.fin ?? '' }}</td>
-                <!-- Mostrar solo la primera persona (personaAsignada o personasAsignadas[0]) -->
                 <td>
                   {{
                     (() => {
@@ -152,7 +151,6 @@ const crearAutomatica = async () => {
     console.log('[crearPlanificacionAutomaticamente] assignedDias used:', assignedDias)
 
     if (Array.isArray(assignedDias) && assignedDias.length > 0) {
-      // Normalizar: tomar solo la primera persona (si existe) y reflejarla en personaAsignada y personasAsignadas=[primera]
       dias.value = assignedDias.map(d => ({
         ...d,
         turnos: (Array.isArray(d.turnos) ? d.turnos : []).map(t => {
@@ -205,7 +203,10 @@ const guardarTodos = async () => {
           // incluir id del turno si existe; no es obligatorio para inserción
           id: t.id ?? null,
           fecha: d.fecha, // en muchos backends se requiere dentro del turno
-          horario: { id: t.horario?.id },
+          horario: {id: t.horario. id,
+          inicio: t. horario.inicio, // AGREGADO
+          fin: t.horario. fin         // AGREGAD
+          },
           // solo primera persona en lista y solo su id
           personasAsignadas: [{ id: p.id }]
         }
