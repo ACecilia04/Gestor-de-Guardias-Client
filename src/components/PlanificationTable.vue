@@ -33,7 +33,6 @@
         </table>
       </div>
 
-      <!-- ✅ External loading and error messages -->
       <div v-if="loading" class="text-muted mt-3">Cargando planificación...</div>
       <div v-if="error" class="text-danger mt-2">{{ error }}</div>
     </div>
@@ -48,36 +47,39 @@ import { getTurnosAPartirDe } from '@/services/planificationService'
 const guardias = ref([])
 const route = useRoute()
 const fecha = route.params.id
+
 const loading = ref(true)
+const error = ref(null)
+
+// Valida formato ISO yyyy-mm-dd
+const isIsoDate = (s) => {
+  return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(new Date(s).getTime())
+}
+
 onMounted(async () => {
-  try {
+
     const response = await getTurnosAPartirDe(fecha)
-    const turnos = response.data
+    const turnos = response?.data ?? []
 
-    guardias.value = turnos.map((t, index) => ({
-      id: t.id || index,
-      dia: new Date(t.fecha).toLocaleDateString('es-ES', {
-        day: 'numeric',
-        weekday: 'long'
-      }),
-      horario: `${t.horario?.inicio?.slice(0, 5)} - ${t.horario?.fin?.slice(0, 5)}`,
-      carnet: t.personaAsignada?.carnet || '',
-      apellidos: t.personaAsignada?.apellido || '',
-      nombre: t.personaAsignada?.nombre || ''
-    }))
-  } catch (error) {
-    console.error('Error cargando planificación:', error)
-  } finally {
-    loading.value = false
-  }
+    guardias.value = turnos.map((t, index) => {
+      const inicio = t.horario?.inicio ? t.horario.inicio.slice(0, 5) : ''
+      const fin = t.horario?.fin ? t.horario.fin.slice(0, 5) : ''
+      return {
+        id: t.id || index,
+        dia: new Date(t.fecha).toLocaleDateString('es-ES', {
+          day: 'numeric',
+          weekday: 'long'
+        }),
+        horario: inicio && fin ? `${inicio} - ${fin}` : (inicio || fin || ''),
+        carnet: t.personaAsignada?.carnet || '',
+        apellidos: t.personaAsignada?.apellido || '',
+        nombre: t.personaAsignada?.nombre || ''
+      }
+    })
 })
-
 
 function exportToPdf() {
   // TODO: conectar con API o fallback de frontend
-  // Ejemplo futuro:
-  // const blob = await getPlanificacionPdf({ /* filtros */ })
-  // downloadBlob(blob, 'planificacion.pdf')
   console.log('[Export] Planificación -> PDF (pendiente de servicio)')
 }
 </script>
