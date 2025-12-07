@@ -41,25 +41,6 @@ const verDetalle = (id) => {
   router.push(`/planif/${id}`)
 }
 
-//  MOCK DATA 
-// planificaciones.value = [
-//   {
-//     id: '2025-07-01',
-//     nombre: 'Julio 2025',
-//     fechaInicio: '2025-07-01'
-//   },
-//   {
-//     id: '2025-08-01',
-//     nombre: 'Agosto 2025',
-//     fechaInicio: '2025-08-01'
-//   },
-//   {
-//     id: '2025-09-01',
-//     nombre: 'Septiembre 2025',
-//     fechaInicio: '2025-09-01'
-//   }
-// ]
-
 onMounted(async () => {
   try {
     const response = await getPrimerasFechasPorMes()

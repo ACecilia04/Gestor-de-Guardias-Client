@@ -42,6 +42,12 @@
         <i class="fa fa-cog"></i>
         <span class="title">Configuración</span></router-link>
     </li>
+    <li>
+      <router-link to="/plantilla">
+        <i class="fa fa-calendar"></i>
+        <span class="title">Nueva planificación</span>
+      </router-link>
+    </li>
   </ul>
 </template>
 
