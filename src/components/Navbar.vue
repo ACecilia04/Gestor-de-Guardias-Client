@@ -42,7 +42,7 @@
         <i class="fa fa-cog"></i>
         <span class="title">Configuración</span></router-link>
     </li>
-    <li>
+    <li v-if="puedeVer('plantilla')">
       <router-link to="/plantilla">
         <i class="fa fa-calendar"></i>
         <span class="title">Nueva planificación</span>

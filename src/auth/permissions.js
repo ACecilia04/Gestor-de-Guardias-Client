@@ -1,8 +1,8 @@
 // src/auth/permissions.js
 export const permisosPorRol = {
   desarrollador: ['*'],
-  administrador: ['workers', 'students', 'users', 'configuration', 'facultad'],
-  planificador: ['planif'],
+  administrador: ['workers', 'students', 'users', 'configuration'],
+  planificador: ['planif', 'plantilla'],
   controlador: ['assistance']
 }
 

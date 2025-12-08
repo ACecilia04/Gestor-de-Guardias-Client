@@ -1,60 +1,112 @@
-/**
- *
- * Apply your custom CSS here
- *
-*/
-
-body {	
+/* Utility classes */
+.table-clickable tr td {
+  cursor: pointer;
+}
+.d-flex {
+  display: flex;
+}
+.flex-grow-1 {
+  flex-grow: 1;
+}
+.align-self-start {
+  align-self: start;
+}
+.ml-auto {
+  margin-left: auto;
+}
+.mr-auto {
+  margin-right: auto;
 }
 
-a {
-}
-
-.table-clickable tr td{
-    cursor: pointer;
-}
-
-.d-flex{
-    display: flex;
-}
-
-.flex-grow-1{
-    flex-grow: 1;
-}
-
-.align-self-start{
-    align-self: start;
-}
-
-.ml-auto{
-    margin-left: auto;
-}
-
-.mr-auto{
-    margin-right: auto;
-}
-
+/* Sidebar base */
 .sidebar-menu {
-  width: 300px ;
-  background: #23272a !important;;
+  width: 300px;
+  background: #23272a !important;
+  transition: width 0.3s ease;
+}
+.page-container .sidebar-menu {
+  width: 300px;
+}
+.page-container.sidebar-collapsed .sidebar-menu {
+  width: 80px;
+  overflow: hidden;
+}
 
+/* Main content shift */
+.page-container .main-content {
+  margin-left: 250px;
+  transition: margin-left 0.3s ease;
 }
-/*
-.main-content {
-  margin-left: 300px !important;
+.page-container.sidebar-collapsed .main-content {
+  margin-left: 80px;
 }
-*/
-.main-menu li > a {
-  font-size: 1.5rem !important;     
- /* font-weight: 600 !important;    */
+
+/* Logo container */
+.logo-env {
+  width: 100%;
+  padding: 15px;
+  box-sizing: border-box;
+  transition: width 0.3s ease, padding 0.3s ease;
+}
+.page-container.sidebar-collapsed .logo-env {
+  width: 80px;
+  padding: 15px 0;
+}
+
+.logo {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+.logo-link {
   display: flex;
   align-items: center;
-  gap: 10px;                       
+  justify-content: flex-start;
+  width: 100%;
+  text-decoration: none;
+  transition: all 0.3s ease;
 }
-/*
-.main-menu .title {
-  font-size: inherit;
-  font-weight: inherit;
-  white-space: nowrap;
-} 
-*/
+.page-container.sidebar-collapsed .logo-link {
+  justify-content: center;
+}
+.logo-text {
+  color: white;
+  font-size: 18px;
+  margin-left: 10px;
+}
+.page-container.sidebar-collapsed .logo-text {
+  display: none;
+}
+
+/* Sidebar menu items */
+.main-menu li > a,
+.main-menu li > router-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 1.5rem !important;
+}
+.page-container.sidebar-collapsed .main-menu li > a,
+.page-container.sidebar-collapsed .main-menu li > router-link {
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  padding: 12px 0;
+}
+.page-container.sidebar-collapsed .main-menu li > a .title,
+.page-container.sidebar-collapsed .main-menu li > router-link .title {
+  display: none;
+}
+.page-container.sidebar-collapsed .main-menu li > a i,
+.page-container.sidebar-collapsed .main-menu li > router-link i {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+
+}
