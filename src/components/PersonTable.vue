@@ -3,7 +3,7 @@
     <div class="panel-heading">
       <h3 class="panel-title">{{ title }}</h3>
       <div class="panel-options">
-        <a href="#" @click.prevent="openEditionForm(null)" title="Añadir">
+        <a href="#" @click. prevent="openEditionForm(null)" title="Añadir">
           <i class="fa fa-plus"></i>
         </a>
         <!-- Botón Exportar PDF -->
@@ -28,14 +28,14 @@
           <tbody>
             <tr
               v-for="persona in personas"
-              :key="persona.id"
+              :key="persona. id"
               @click="openEditionForm(persona)"
               style="cursor: pointer;"
             >
               <td>{{ persona.carnet }}</td>
               <td>{{ persona.apellido }}</td>
               <td>{{ persona.nombre }}</td>
-              <td>{{ persona.sexo }}</td>
+              <td>{{ persona. sexo }}</td>
               <td>{{ persona.disponibilidad }}</td>
               <td>{{ persona.diasDesdeUltimaGuardia }}</td>
             </tr>
@@ -59,9 +59,9 @@
 </template>
 
 <script setup>
-// import { getPersonasPdf } from '@/services/exportService' // TODO: integrar servicio API
 import { ref, onMounted, watch, computed } from 'vue'
 import { getPersonasByTipo } from '@/services/personService'
+import { exportPersonasToPdf } from '@/services/exportService'
 import PersonaEdition from './PersonEdition.vue'
 
 const props = defineProps({ tipo: String })
@@ -103,17 +103,55 @@ const openEditionForm = (persona) => {
 }
 
 const closeEditionForm = async () => {
-  showModal.value = false
+  showModal. value = false
   selectedPersona.value = null
   await loadData()
 }
 
-// Botón Exportar PDF (placeholder)
-function exportToPdf() {
-  // TODO: conectar con API o fallback de frontend
-  // Ejemplo futuro:
-  // const blob = await getPersonasPdf({ tipo: props.tipo })
-  // downloadBlob(blob, `personas-${props.tipo}.pdf`)
-  console.log('[Export] Personas -> PDF (pendiente de servicio)', props.tipo)
+// Exportar PDF
+async function exportToPdf() {
+  try {
+    if (!personas.value || personas.value.length === 0) {
+      alert('No hay personas para exportar')
+      return
+    }
+
+    // Preparar datos para el backend
+    const personasParaExportar = personas.value.map(p => ({
+      id: p. id,
+      nombre: p.nombre,
+      apellido: p.apellido,
+      carnet: p.carnet,
+      sexo: p.sexo,
+      tipo: {
+        nombre: props.tipo // Asegurar que se envíe el tipo correcto
+      },
+      ultimaGuardiaAsignada: p.ultimaGuardiaAsignada || null,
+      guardiasDeRecuperacion: p.guardiasDeRecuperacion || 0,
+      baja: p.baja || null,
+      reincorporacion: p.reincorporacion || null
+    }))
+
+    const titulo = `Reporte de ${title.value}`
+    
+    console.log('Enviando al backend:', { personas: personasParaExportar, titulo })
+    
+    const response = await exportPersonasToPdf(personasParaExportar, titulo)
+
+    // Descargar el PDF
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `${props.tipo. toLowerCase()}s.pdf`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+    
+  } catch (err) {
+    console.error('Error exportando PDF:', err)
+    alert('Error al generar el PDF.  Revisa la consola.')
+  }
 }
 </script>

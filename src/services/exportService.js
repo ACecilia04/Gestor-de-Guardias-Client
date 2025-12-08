@@ -7,9 +7,25 @@ const exportApi = axios.create({
   withCredentials: true
 })
 
-export const exportAsistenciasToPdf = (plantilla, rutaArchivo) => {
-  return exportApi.post('/plantilla', plantilla, {
-    params: { rutaArchivo }
+// Para personas
+export const exportPersonasToPdf = (personas, titulo) => {
+  return exportApi.post('/personas', personas, {
+    params: { titulo }
+  }). catch(error => {
+    console.error('Error en exportPersonasToPdf:', error.response?. data || error.message)
+    throw error
   })
 }
 
+export const exportAsistenciasToPdf = (plantilla) => {
+  return exportApi.post('/plantilla', plantilla) 
+}
+
+// Para planificación (sin cumplimiento)
+export const exportPlanificacionToPdf = (plantilla) => {
+  return exportApi.post('/plantilla', plantilla)
+    .catch(error => {
+      console. error('Error en exportPlanificacionToPdf:', error.response?.data || error.message)
+      throw error
+    })
+}

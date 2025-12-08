@@ -70,19 +70,26 @@ onMounted(async () => {
     const response = await getTurnosAPartirDe(fecha)
     const turnos = response.data
 
-    guardias.value = turnos.map((t, index) => ({
-      id: t.id || index,
-      fecha: t.fecha, 
-      dia: new Date(t.fecha).toLocaleDateString('es-ES', {
-        day: 'numeric',
-        weekday: 'long'
-      }),
-      horario: `${t.horario?.inicio?.slice(0, 5)} - ${t.horario?.fin?.slice(0, 5)}`,
-      carnet: t.personaAsignada?.carnet || '',
-      apellidos: t.personaAsignada?.apellido || '',
-      nombre: t.personaAsignada?.nombre || '',
-      asistencia: t.cumplimiento ?? null
-    }))
+    guardias.value = turnos.map((t, index) => {
+      // Asegurar formato YYYY-MM-DD para la fecha
+      const fechaObj = new Date(t.fecha)
+      const fechaISO = fechaObj.toISOString(). split('T')[0]
+      
+      return {
+        id: t.id || index,
+        fecha: fechaISO, // formato "2025-12-08"
+        dia: fechaObj.toLocaleDateString('es-ES', {
+          day: 'numeric',
+          weekday: 'long'
+        }),
+        horario: `${t.horario?. inicio?. slice(0, 5)} - ${t.horario?.fin?.slice(0, 5)}`,
+        carnet: t.personaAsignada?.carnet || '',
+        apellidos: t.personaAsignada?.apellido || '',
+        nombre: t. personaAsignada?.nombre || '',
+        asistencia: t.cumplimiento === true ? 'cumplido' 
+          : (t.cumplimiento === false ?  'incumplido' : null)
+      }
+    })
 
   } catch (err) {
     error.value = 'No se pudieron cargar las asistencias.'
@@ -94,18 +101,16 @@ onMounted(async () => {
 
 async function exportToPdf() {
   try {
-    // Group guardias by fecha
     const grouped = {}
-    for (const g of guardias.value) {
-      const fecha = g.fecha // must be a valid LocalDate string
+    for (const g of guardias. value) {
+      const fecha = g.fecha
       if (!grouped[fecha]) grouped[fecha] = []
       grouped[fecha].push(g)
     }
 
-    // Build plantilla structure
     const plantilla = Object.entries(grouped).map(([fecha, turnos]) => ({
-      fecha, //  must be ISO string like "2025-12-03"
-      turnos: turnos.map(g => ({
+      fecha,
+      turnos: turnos. map(g => ({
         horario: {
           inicio: g.horario.split(' - ')[0],
           fin: g.horario.split(' - ')[1]
@@ -113,16 +118,15 @@ async function exportToPdf() {
         personaAsignada: {
           nombre: g.nombre,
           apellido: g.apellidos,
-          carnet: g.carnet
+          carnet: g. carnet
         },
-        cumplimiento: g.asistencia === 'cumplido'
+        cumplimiento: g. asistencia === 'cumplido' ? true : (g.asistencia === 'incumplido' ? false : null)
       }))
     }))
 
-console.log('📦 Plantilla enviada al backend:', JSON.stringify(plantilla, null, 2))
-    const response = await exportAsistenciasToPdf(plantilla, 'asistencias.pdf')
+    const response = await exportAsistenciasToPdf(plantilla) // ← Sin rutaArchivo
 
-    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const blob = new Blob([response. data], { type: 'application/pdf' })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -130,8 +134,11 @@ console.log('📦 Plantilla enviada al backend:', JSON.stringify(plantilla, null
     document.body.appendChild(link)
     link.click()
     link.remove()
+    window.URL.revokeObjectURL(url)
+    
+    console.log('✅ PDF descargado exitosamente')
   } catch (err) {
-    console.error('Error exportando PDF:', err)
+    console.error('❌ Error exportando PDF:', err)
   }
 }
 

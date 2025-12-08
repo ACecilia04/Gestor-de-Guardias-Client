@@ -23,7 +23,7 @@
           </thead>
           <tbody>
             <tr v-for="g in guardias" :key="g.id">
-              <td>{{ g.dia }}</td>
+              <td>{{ g. dia }}</td>
               <td>{{ g.horario }}</td>
               <td>{{ g.carnet }}</td>
               <td>{{ g.apellidos }}</td>
@@ -43,6 +43,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getTurnosAPartirDe } from '@/services/planificationService'
+import { exportPlanificacionToPdf } from '@/services/exportService'
 
 const guardias = ref([])
 const route = useRoute()
@@ -51,22 +52,23 @@ const fecha = route.params.id
 const loading = ref(true)
 const error = ref(null)
 
-// Valida formato ISO yyyy-mm-dd
-const isIsoDate = (s) => {
-  return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(new Date(s).getTime())
-}
-
 onMounted(async () => {
-
+  try {
     const response = await getTurnosAPartirDe(fecha)
     const turnos = response?.data ?? []
 
     guardias.value = turnos.map((t, index) => {
-      const inicio = t.horario?.inicio ? t.horario.inicio.slice(0, 5) : ''
-      const fin = t.horario?.fin ? t.horario.fin.slice(0, 5) : ''
+      // Asegurar formato ISO YYYY-MM-DD para la fecha
+      const fechaObj = new Date(t.fecha)
+      const fechaISO = fechaObj.toISOString().split('T')[0]
+      
+      const inicio = t.horario?.inicio ? t.horario.inicio. slice(0, 5) : ''
+      const fin = t. horario?.fin ? t.horario.fin.slice(0, 5) : ''
+      
       return {
         id: t.id || index,
-        dia: new Date(t.fecha).toLocaleDateString('es-ES', {
+        fecha: fechaISO, // ← Formato "2025-12-08"
+        dia: fechaObj.toLocaleDateString('es-ES', {
           day: 'numeric',
           weekday: 'long'
         }),
@@ -76,11 +78,69 @@ onMounted(async () => {
         nombre: t.personaAsignada?.nombre || ''
       }
     })
+  } catch (err) {
+    error.value = 'No se pudo cargar la planificación.'
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
 })
 
-function exportToPdf() {
-  // TODO: conectar con API o fallback de frontend
-  console.log('[Export] Planificación -> PDF (pendiente de servicio)')
+async function exportToPdf() {
+  try {
+    // Agrupar guardias por fecha
+    const grouped = {}
+    for (const g of guardias.value) {
+      const fecha = g.fecha // debe ser formato YYYY-MM-DD
+      if (!grouped[fecha]) grouped[fecha] = []
+      grouped[fecha].push(g)
+    }
+
+    // Construir estructura de plantilla para el backend
+    const plantilla = Object.entries(grouped).map(([fecha, turnos]) => {
+      const [inicio, fin] = turnos[0]?.horario. split(' - ') || ['', '']
+      
+      return {
+        fecha, // formato ISO "2025-12-08"
+        turnos: turnos.map(g => {
+          const [horarioInicio, horarioFin] = g.horario.split(' - ')
+          
+          return {
+            id: g.id,
+            horario: {
+              inicio: horarioInicio || '', // "08:00"
+              fin: horarioFin || ''         // "10:00"
+            },
+            personaAsignada: {
+              nombre: g.nombre,
+              apellido: g.apellidos,
+              carnet: g.carnet
+            },
+          }
+        })
+      }
+    })
+
+    console.log('Plantilla enviada al backend:', JSON.stringify(plantilla, null, 2))
+    
+    const response = await exportPlanificacionToPdf(plantilla)
+
+    // Crear y descargar el PDF
+    const blob = new Blob([response. data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'planificacion.pdf')
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+    
+    console.log('PDF de planificación descargado exitosamente')
+  } catch (err) {
+    console.error('Error exportando PDF:', err)
+    alert('Error al generar el PDF. Revisa la consola.')
+  }
 }
 </script>
 
